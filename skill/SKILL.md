@@ -7,6 +7,26 @@ description: "Decomposes complex prompts into orchestrated multi-task workflows.
 
 **Split and organize** complex documents into structured, executable workflows using the PM-subagent pattern.
 
+---
+
+## Execution Model
+
+**This skill ALWAYS runs as a subagent** (via Task tool) to preserve the user's main conversation context.
+
+| Principle | Implementation |
+|-----------|----------------|
+| Context Preservation | Spawn orchestrator as background/separate agent |
+| Clean Handoff | Return results summary to parent conversation |
+| No Context Pollution | Decomposition work never consumes user's primary context |
+
+The orchestrator should:
+1. Be spawned as a background/separate agent via Task tool
+2. Perform all analysis and file generation in isolated context
+3. Return structured results to the parent conversation
+4. Never consume the user's primary context with decomposition work
+
+---
+
 ## Core Principle: EXTRACT, DON'T GENERATE
 
 This skill is a **splitter/organizer**, NOT a generator.
@@ -67,6 +87,74 @@ This skill addresses common failure modes in complex prompts:
 ---
 
 ## Workflow
+
+### Phase 0: Detect Existing PM Orchestration
+
+Before analyzing the source document, check if it already contains PM orchestration structure.
+
+**0.1 PM Orchestration Detection Scoring**
+
+Scan the source document and score each signal:
+
+| Signal | Points | Detection Pattern |
+|--------|--------|-------------------|
+| PM/Coordinator role definition | 20 | "You are the PM", "coordinator", "orchestrate", "project manager" in headings/instructions |
+| Task sequence table | 20 | Markdown table with Order/Task columns, numbered lists with task names |
+| Dependencies stated | 15 | "blocked by", "requires", "after", "depends on", dependency column |
+| Validation/completion criteria | 15 | "success criteria", "validation", "verify", checkboxes per task |
+| Progress tracking | 15 | Status column, "Not Started/In Progress/Complete", progress tracker section |
+| Error handling instructions | 15 | "if failed", "on error", "escalate", failure handling |
+
+**Maximum Score: 100 points**
+
+**0.2 Threshold Interpretation**
+
+| Score | Interpretation | Action |
+|-------|----------------|--------|
+| 60-100 | Good orchestration detected | Present user choice (0.3) |
+| 40-59 | Orchestration present but could be improved | Present user choice (0.3) |
+| 0-39 | No significant orchestration | Proceed to Phase 1 (full orchestration) |
+
+**0.3 User Choice Flow (Score 40+)**
+
+When existing orchestration is detected, present a hold message and user choice:
+
+**Hold Message (Stargate themed):**
+```
+===============================================
+ UNSCHEDULED OFFWORLD ACTIVATION
+===============================================
+
+Existing orchestration structure detected in source document.
+Verifying IDC before proceeding...
+
+Orchestration Score: {score}/100
+
+Signals Detected:
+- {signal_1}: {points} pts
+- {signal_2}: {points} pts
+...
+
+===============================================
+```
+
+**Present AskUserQuestion with options:**
+
+| Option | Code | Description |
+|--------|------|-------------|
+| **USE AS-IS** | "The iris is open" | Extract and split using existing PM structure from source |
+| **REBUILD** | "Dial new coordinates" | Replace source orchestration with skill's optimized structure |
+| **BOTH** | "Establish secondary gate" | Keep original + create PM-ORCHESTRATION-SUGGESTED.md |
+
+**Option Behaviors:**
+
+- **USE AS-IS**: Extract the existing PM orchestration structure, create task files based on the source's defined task sequence, preserve source validation criteria and dependencies.
+
+- **REBUILD**: Ignore source orchestration, apply full Phase 1 analysis, generate new optimized PM-ORCHESTRATION.md and task structure.
+
+- **BOTH**: Extract source structure into standard files, ALSO create PM-ORCHESTRATION-SUGGESTED.md with skill's recommended improvements, note differences in SUGGESTIONS.md.
+
+---
 
 ### Phase 1: Analyze Source Document
 
@@ -148,10 +236,15 @@ Extract verb/noun from source section headers:
 
 **2.3 Create Extraction Files**
 
-**PM-ORCHESTRATION.md**:
-- Task sequence table with source line references
+**PM-ORCHESTRATION.md** (MUST use template structure from `assets/templates/pm-orchestration.md`):
+- **REQUIRED SECTIONS** (must appear in every output):
+  - PM RULES (READ FIRST) - defines PM role and subagent requirement
+  - TASK SEQUENCE table with source line references
+  - EXECUTION INSTRUCTIONS - includes Task tool spawn example
+  - PROGRESS TRACKER
+  - NON-NEGOTIABLES - enforces subagent usage
+  - ERROR HANDLING
 - Dependencies from source structure
-- Progress tracker
 - Link to source document
 
 **CONTEXT.md**:
@@ -181,7 +274,79 @@ Extract verb/noun from source section headers:
 [standard completion format]
 ```
 
-**2.4 Create SUGGESTIONS.md**
+**2.4 PM-ORCHESTRATION.md Required Sections**
+
+Every generated PM-ORCHESTRATION.md MUST include these sections verbatim (adjust only variable placeholders):
+
+---
+
+**PM RULES (READ FIRST)**
+
+```markdown
+## PM RULES (READ FIRST)
+
+1. **You are the PROJECT MANAGER.** Coordinate subagents, do not execute tasks yourself.
+2. **Use subagents for EVERY task.** Spawn via Task tool with task file + CONTEXT.md reference.
+3. **Sequential execution.** Wait for `STATUS: COMPLETE` before proceeding to next task.
+4. **Parallel groups allowed.** Tasks marked parallel can run simultaneously within their group.
+5. **On failure: HALT.** Document failure, do not proceed, escalate to user.
+```
+
+---
+
+**NON-NEGOTIABLES**
+
+```markdown
+## NON-NEGOTIABLES
+
+1. Use subagents for ALL tasks - never execute directly
+2. Each subagent receives ONLY its task file + CONTEXT.md
+3. Wait for completion before proceeding
+4. Update Progress Tracker after each task
+5. If blocked or failed: STOP and report - no improvisation
+```
+
+---
+
+**EXECUTION INSTRUCTIONS**
+
+```markdown
+## EXECUTION INSTRUCTIONS
+
+### For Each Task
+
+1. **Verify Blocker Completion** - All blockers must show COMPLETE
+
+2. **Spawn Subagent**
+   ```
+   Task tool invocation:
+     subagent_type: "general-purpose" (or domain-specific if available)
+     prompt: |
+       Read CONTEXT.md first: {CONTEXT_PATH}
+       Then execute task: {TASK_PATH}
+
+       Report completion with:
+       STATUS: COMPLETE or FAILED
+       CHANGES: [list of changes made]
+       ISSUES: [any problems encountered]
+   ```
+
+3. **Wait for Completion** - Subagent reports STATUS
+
+4. **Update Progress Tracker** - Mark task status in PM-ORCHESTRATION.md
+
+5. **Handle Results**
+   - COMPLETE: proceed to next task
+   - FAILED: STOP workflow, report to user, await instructions
+```
+
+---
+
+**CRITICAL**: Without these sections, the PM may execute tasks directly instead of spawning subagents, defeating the purpose of the orchestration.
+
+---
+
+**2.5 Create SUGGESTIONS.md**
 
 Compile all observations from Phase 1.3:
 
@@ -266,7 +431,7 @@ Observations about task ordering and dependencies:
 **Recommendation**: Review Critical items before executing tasks.
 ```
 
-**2.5 Extraction Rules**
+**2.6 Extraction Rules**
 
 | Source Element | Extraction Method |
 |----------------|-------------------|
@@ -285,7 +450,7 @@ Observations about task ordering and dependencies:
 - Substitute APIs
 - Include suggestions or observations (those go in SUGGESTIONS.md)
 
-**2.6 Output Location**
+**2.7 Output Location**
 
 ```
 {output_dir}/
@@ -453,6 +618,12 @@ SUGGESTIONS.md contains {N} observations.
 
 **RIGHT**: Task file preserves `print()` exactly. SUGGESTIONS.md notes "print() should be Log.Message()".
 
+### 6. PM Executing Tasks Directly
+
+**WRONG**: PM-ORCHESTRATION.md has task list but PM reads tasks and executes them itself.
+
+**RIGHT**: PM-ORCHESTRATION.md has PM RULES, NON-NEGOTIABLES, and EXECUTION INSTRUCTIONS that force PM to spawn subagents via Task tool for each task.
+
 ---
 
 ## Extraction Examples
@@ -540,3 +711,119 @@ For detailed patterns and examples, see:
 - `references/workflow-patterns.md` - Workflow patterns and best practices
 - `assets/templates/` - Templates for generated files
 - `assets/examples/` - Working examples from real projects
+
+---
+
+## Good PM Orchestration Reference
+
+This section defines what constitutes well-structured PM orchestration for detection scoring.
+
+### Essential Elements
+
+| Element | Purpose | Required For Good Score |
+|---------|---------|------------------------|
+| Clear role definition | Distinguish PM from worker agents | "You are the PM", "coordinate subagents" |
+| Task sequence with ordering | Explicit execution order | Numbered list or Order column |
+| Dependencies between tasks | Prevent out-of-order execution | "blocked by", "requires", dependency column |
+| Validation criteria per task | Verify completion | Checkboxes, "success criteria" section |
+| Progress tracking mechanism | Monitor workflow state | Status column with states |
+| Failure handling instructions | Graceful degradation | "if FAILED", "on error", escalation |
+
+### Good Examples
+
+**Task Sequence Table (20 pts)**
+```markdown
+| Order | Task File | Description | Blocker |
+|-------|-----------|-------------|---------|
+| 1 | 01-setup-env.md | Configure environment | - |
+| 2 | 02-implement-core.md | Build core module | Task 1 |
+| 3 | 03-add-tests.md | Write test suite | Task 2 |
+```
+
+**Progress Tracker with Status (15 pts)**
+```markdown
+| Task | Status | Notes |
+|------|--------|-------|
+| Task 1 | Complete | Env configured |
+| Task 2 | In Progress | 60% done |
+| Task 3 | Not Started | Blocked by Task 2 |
+```
+
+**Explicit Failure Handling (15 pts)**
+```markdown
+## Error Protocol
+- If FAILED: halt workflow, report to user, do not proceed
+- Escalation: provide failure context and affected tasks
+- Recovery: user must approve retry or skip
+```
+
+**Validation Criteria (15 pts)**
+```markdown
+## Validation
+- [ ] All unit tests pass
+- [ ] No linting errors
+- [ ] Documentation updated
+- [ ] Commit message follows convention
+```
+
+**PM Role Definition (20 pts)**
+```markdown
+## PM RULES (READ FIRST)
+1. You are the PROJECT MANAGER. You coordinate subagents.
+2. You MUST use subagents for each task.
+3. You MUST NOT proceed to the next task until current is complete.
+```
+
+### Weak Examples (Low Scores)
+
+**Numbered list without dependencies (5 pts max)**
+```markdown
+1. Setup environment
+2. Implement core
+3. Add tests
+```
+*Missing: blockers, validation, failure handling, status tracking*
+
+**Vague instructions (0-10 pts)**
+```markdown
+Do these tasks in order:
+- Build the thing
+- Test it
+- Deploy
+```
+*Missing: everything essential*
+
+**No validation criteria (loses 15 pts)**
+```markdown
+| Task | Description |
+|------|-------------|
+| Setup | Configure environment |
+| Build | Implement feature |
+```
+*Missing: how to know when complete*
+
+**No failure handling (loses 15 pts)**
+```markdown
+Execute tasks 1-5 in sequence.
+```
+*What happens if task 3 fails? Undefined behavior.*
+
+### Scoring Heuristics
+
+When evaluating source documents:
+
+1. **Role definition** - Look in first 50 lines for PM/coordinator language
+2. **Task sequence** - Search for markdown tables with "Task", "Order", numbered headers
+3. **Dependencies** - Scan for "block", "require", "after", "depend" keywords
+4. **Validation** - Look for checkboxes `[ ]`, "criteria", "verify", "validate"
+5. **Progress** - Search for "Status", "Progress", state words (Complete/Started/Failed)
+6. **Error handling** - Find "if fail", "on error", "escalate", exception language
+
+### Detection Confidence
+
+| Confidence | Score Range | Recommendation |
+|------------|-------------|----------------|
+| High | 80-100 | Strong orchestration - USE AS-IS likely best |
+| Medium | 60-79 | Good structure - User choice appropriate |
+| Low | 40-59 | Partial structure - REBUILD may improve |
+| None | 0-39 | No orchestration - Full skill application |

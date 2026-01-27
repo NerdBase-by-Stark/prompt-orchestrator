@@ -1,6 +1,6 @@
 # Product Requirements Document: Prompt Orchestrator
 
-> Version: 0.2.0
+> Version: 0.3.0
 > Author: NerdBase-by-Stark
 > Created: 2026-01-27
 > Updated: 2026-01-27
@@ -29,7 +29,19 @@ Input:  Complex prompt or plan document
 Output: PM-ORCHESTRATION.md + CONTEXT.md + subagent-tasks/*.md + SUGGESTIONS.md
 ```
 
-### 1.3 Core Design Principle
+### 1.3 Execution Model
+
+**The skill ALWAYS runs as a subagent** to preserve the user's main conversation context.
+
+| Principle | Implementation |
+|-----------|----------------|
+| Context Preservation | Spawn orchestrator as background/separate agent via Task tool |
+| Clean Handoff | Return results summary to parent conversation |
+| No Context Pollution | Decomposition work never consumes user's primary context |
+
+This ensures the user's main conversation remains focused on their primary work while orchestration happens in an isolated context.
+
+### 1.4 Core Design Principle
 
 **EXTRACT, DON'T GENERATE**
 
@@ -45,7 +57,7 @@ The skill is a **splitter/organizer**, not a code generator.
 
 **Rationale:** When source documents already contain implementation details (code snippets, subagent prompts, validation criteria), the skill's job is to organize them into executable chunks - not to rewrite them and potentially introduce errors.
 
-### 1.4 Target Users
+### 1.5 Target Users
 
 **Primary:** Power users who understand AI workflows but aren't senior coders who would build orchestration files manually.
 
@@ -83,9 +95,76 @@ The skill is a **splitter/organizer**, not a code generator.
 
 ---
 
-## 3. User Stories
+## 3. PM Orchestration Detection
 
-### 3.1 Primary Flow
+### 3.1 Overview
+
+Before decomposing a document, the skill detects if existing PM orchestration structure is present. This prevents unnecessary rebuilding of well-structured documents.
+
+### 3.2 Detection Scoring
+
+| Signal | Points | Detection Pattern |
+|--------|--------|-------------------|
+| PM/Coordinator role definition | 20 | "You are the PM", "coordinator", "orchestrate", "project manager" |
+| Task sequence table | 20 | Markdown table with Order/Task columns, numbered task lists |
+| Dependencies stated | 15 | "blocked by", "requires", "after", "depends on" |
+| Validation/completion criteria | 15 | "success criteria", "validation", checkboxes per task |
+| Progress tracking | 15 | Status column, "Not Started/In Progress/Complete" |
+| Error handling instructions | 15 | "if failed", "on error", "escalate" |
+
+**Maximum Score: 100 points**
+
+### 3.3 Threshold Actions
+
+| Score | Interpretation | Action |
+|-------|----------------|--------|
+| 60-100 | Good orchestration | Present user choice |
+| 40-59 | Partial orchestration | Present user choice |
+| 0-39 | No orchestration | Full skill application |
+
+### 3.4 User Choice Flow (Stargate Themed)
+
+When existing orchestration is detected (score 40+), the skill presents a themed hold message:
+
+```
+===============================================
+ UNSCHEDULED OFFWORLD ACTIVATION
+===============================================
+
+Existing orchestration structure detected in source document.
+Verifying IDC before proceeding...
+
+Orchestration Score: {score}/100
+
+Signals Detected:
+- PM Role Definition: {points} pts
+- Task Sequence Table: {points} pts
+- Dependencies: {points} pts
+...
+
+===============================================
+```
+
+**User Options:**
+
+| Option | Code | Behavior |
+|--------|------|----------|
+| **USE AS-IS** | "The iris is open" | Extract using source's existing PM structure |
+| **REBUILD** | "Dial new coordinates" | Replace with skill's optimized orchestration |
+| **BOTH** | "Establish secondary gate" | Keep original + create PM-ORCHESTRATION-SUGGESTED.md |
+
+### 3.5 Rationale
+
+- **Respects existing work**: If a document is already well-orchestrated, don't destroy it
+- **User agency**: Let the user decide how to proceed
+- **Thematic consistency**: Stargate theme adds character while being functional
+- **Transparency**: Show exactly what was detected and scored
+
+---
+
+## 4. User Stories
+
+### 4.1 Primary Flow
 
 ```
 As a developer,
@@ -99,7 +178,7 @@ So that I can execute it as a high-quality, decomposed workflow.
 - [ ] Generates complete file structure
 - [ ] Files are immediately executable with Claude Code
 
-### 3.2 Complexity Assessment
+### 4.2 Complexity Assessment
 
 ```
 As a developer,
@@ -112,7 +191,7 @@ So that I don't add overhead to simple tasks.
 - [ ] Recommends: "monolithic OK" vs "decomposition recommended"
 - [ ] Threshold configurable (default: 50+ changes or ~500 lines expected)
 
-### 3.3 Customization
+### 4.3 Customization
 
 ```
 As a developer,
@@ -127,9 +206,9 @@ So that it fits my team's conventions.
 
 ---
 
-## 4. Functional Requirements
+## 5. Functional Requirements
 
-### 4.1 Input Analysis
+### 5.1 Input Analysis
 
 The skill MUST analyze the input prompt for:
 
@@ -141,9 +220,9 @@ The skill MUST analyze the input prompt for:
 | Complexity indicators | Nested requirements, conditionals, multi-file changes |
 | Domain context | Extract project paths, technologies, constraints |
 
-### 4.2 Output Structure
+### 5.2 Output Structure
 
-#### 4.2.1 PM-ORCHESTRATION.md
+#### 5.2.1 PM-ORCHESTRATION.md
 
 ```markdown
 # {Project Name} - PM Orchestration
@@ -180,7 +259,7 @@ The skill MUST analyze the input prompt for:
 3. If blocked, STOP and report
 ```
 
-#### 4.2.2 CONTEXT.md
+#### 5.2.2 CONTEXT.md
 
 ```markdown
 # {Project Name} - Shared Context
@@ -204,7 +283,7 @@ Before doing any work, read: {claude.md path if exists}
 {any state that needs to persist across tasks}
 ```
 
-#### 4.2.3 subagent-tasks/{task-file}.md
+#### 5.2.3 subagent-tasks/{task-file}.md
 
 ```markdown
 # TASK: {Task Name}
@@ -233,7 +312,7 @@ NOTES: {any issues}
 ```
 ```
 
-### 4.3 Complexity Scoring
+### 5.3 Complexity Scoring
 
 | Score | Recommendation | Criteria |
 |-------|----------------|----------|
@@ -241,7 +320,7 @@ NOTES: {any issues}
 | 31-70 | Consider decomposition | 5-15 tasks, some dependencies |
 | 71-100 | Decomposition recommended | 15+ tasks, complex dependencies, >500 lines |
 
-### 4.4 Operators (Inspired by AFlow)
+### 5.4 Operators (Inspired by AFlow)
 
 The skill should recognize and apply these patterns:
 
@@ -255,9 +334,9 @@ The skill should recognize and apply these patterns:
 
 ---
 
-## 5. Technical Design
+## 6. Technical Design
 
-### 5.1 Skill Structure
+### 6.1 Skill Structure
 
 ```
 ~/.claude/skills/prompt-orchestrator/
@@ -276,7 +355,7 @@ The skill should recognize and apply these patterns:
     └── analyze_prompt.py       # Optional complexity analyzer
 ```
 
-### 5.1.1 Dual Output Model
+### 6.1.1 Dual Output Model
 
 | Output | Purpose | Content |
 |--------|---------|---------|
@@ -285,7 +364,7 @@ The skill should recognize and apply these patterns:
 
 This separation ensures task files remain pure extractions while the skill's analytical capability is captured separately for user review.
 
-### 5.2 Invocation
+### 6.2 Invocation
 
 ```bash
 # Via slash command
@@ -298,7 +377,7 @@ This separation ensures task files remain pure extractions while the skill's ana
 /orchestrate --file requirements.md
 ```
 
-### 5.3 Algorithm (High-Level)
+### 6.3 Algorithm (High-Level)
 
 ```
 1. PARSE input prompt
@@ -328,7 +407,7 @@ This separation ensures task files remain pure extractions while the skill's ana
 7. REPORT final status
 ```
 
-### 5.4 File Naming Convention
+### 6.4 File Naming Convention
 
 Task files auto-named with pattern: `{order}-{verb}-{noun}.md`
 
@@ -346,9 +425,9 @@ This ensures:
 
 ---
 
-## 6. Success Metrics
+## 7. Success Metrics
 
-### 6.1 Quality Metrics
+### 7.1 Quality Metrics
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
@@ -356,7 +435,7 @@ This ensures:
 | Dependency accuracy | >90% | Blockers correctly identified |
 | Execution success rate | >85% | Workflows complete without manual intervention |
 
-### 6.2 Efficiency Metrics
+### 7.2 Efficiency Metrics
 
 | Metric | Target |
 |--------|--------|
@@ -366,7 +445,7 @@ This ensures:
 
 ---
 
-## 7. Risks & Mitigations
+## 8. Risks & Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
@@ -377,7 +456,7 @@ This ensures:
 
 ---
 
-## 8. Milestones
+## 9. Milestones
 
 ### Phase 1: MVP (v0.1.0)
 - [ ] Basic prompt analysis
@@ -391,14 +470,21 @@ This ensures:
 - [ ] Dependency inference
 - [ ] Validation criteria generation
 
-### Phase 3: Learning (v0.3.0)
+### Phase 3: PM Detection & User Agency (v0.3.0)
+- [x] PM orchestration detection scoring
+- [x] User choice flow (USE AS-IS / REBUILD / BOTH)
+- [x] Stargate-themed hold message
+- [x] Auto-subagent execution model
+- [x] Good PM orchestration reference documentation
+
+### Phase 4: Learning (v0.4.0)
 - [ ] Execution feedback integration
 - [ ] Template refinement based on outcomes
 - [ ] Pattern library
 
 ---
 
-## 9. Decisions & Open Questions
+## 10. Decisions & Open Questions
 
 ### Resolved Decisions
 
@@ -407,6 +493,9 @@ This ensures:
 | **Template format** | Markdown | Readable, easy to edit, works with Claude Code |
 | **Execution** | Yes, analyze + generate + execute | Full workflow - don't leave user with files to run manually |
 | **Naming conventions** | Auto-generate with baked-in steps | Files should be deployment-ready, numbered for sequence |
+| **PM detection theme** | Stargate SG-1 | User preference; adds character while remaining functional |
+| **Subagent execution** | Always run as subagent | Preserve user's main context; isolate decomposition work |
+| **User choice on existing orchestration** | Present options (USE AS-IS/REBUILD/BOTH) | Respect existing work; give user agency |
 
 ### Open Questions
 
@@ -417,7 +506,7 @@ This ensures:
 
 ---
 
-## 10. References
+## 11. References
 
 - [Industry Research Findings](./docs/research/industry-findings.md)
 - [Existing Tools Analysis](./docs/research/existing-tools.md)

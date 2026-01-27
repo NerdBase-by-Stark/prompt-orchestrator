@@ -1,9 +1,10 @@
 # Product Requirements Document: Prompt Orchestrator
 
-> Version: 0.1.0-draft
+> Version: 0.2.0
 > Author: NerdBase-by-Stark
 > Created: 2026-01-27
-> Status: Draft
+> Updated: 2026-01-27
+> Status: In Development
 
 ---
 
@@ -24,11 +25,27 @@ Industry research shows decomposed, multi-step workflows with clear role separat
 A Claude Code skill that automatically decomposes complex prompts into an orchestrated, executable workflow:
 
 ```
-Input:  Complex prompt (natural language)
-Output: PM-ORCHESTRATION.md + CONTEXT.md + subagent-tasks/*.md
+Input:  Complex prompt or plan document
+Output: PM-ORCHESTRATION.md + CONTEXT.md + subagent-tasks/*.md + SUGGESTIONS.md
 ```
 
-### 1.3 Target Users
+### 1.3 Core Design Principle
+
+**EXTRACT, DON'T GENERATE**
+
+The skill is a **splitter/organizer**, not a code generator.
+
+| DO | DON'T |
+|----|-------|
+| Extract verbatim content from source | Generate new code |
+| Preserve exact APIs and patterns | Substitute APIs (print vs Log.Message) |
+| Reference source line numbers | Invent implementation details |
+| Copy code blocks unchanged | "Improve" or rewrite source code |
+| Capture observations in SUGGESTIONS.md | Inject suggestions into task files |
+
+**Rationale:** When source documents already contain implementation details (code snippets, subagent prompts, validation criteria), the skill's job is to organize them into executable chunks - not to rewrite them and potentially introduce errors.
+
+### 1.4 Target Users
 
 **Primary:** Power users who understand AI workflows but aren't senior coders who would build orchestration files manually.
 
@@ -244,14 +261,29 @@ The skill should recognize and apply these patterns:
 
 ```
 ~/.claude/skills/prompt-orchestrator/
-├── skill.md           # Main skill definition
-├── templates/
-│   ├── pm-orchestration.md
-│   ├── context.md
-│   └── task.md
-└── examples/
-    └── qsys-mute-state-controller/
+├── SKILL.md                    # Main skill definition
+├── assets/
+│   ├── templates/
+│   │   ├── pm-orchestration.md
+│   │   ├── context.md
+│   │   ├── task.md
+│   │   └── suggestions.md      # NEW: Advisory output template
+│   └── examples/
+│       └── qsys-mute-state-controller/
+├── references/
+│   └── workflow-patterns.md    # Pattern library
+└── scripts/
+    └── analyze_prompt.py       # Optional complexity analyzer
 ```
+
+### 5.1.1 Dual Output Model
+
+| Output | Purpose | Content |
+|--------|---------|---------|
+| **Task files** | Execution | Extracted verbatim from source |
+| **SUGGESTIONS.md** | Advisory | Analytical observations, gaps, improvements |
+
+This separation ensures task files remain pure extractions while the skill's analytical capability is captured separately for user review.
 
 ### 5.2 Invocation
 

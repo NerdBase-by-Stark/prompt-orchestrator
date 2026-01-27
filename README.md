@@ -3,6 +3,10 @@
 > Automatically decompose complex prompts into orchestrated, executable workflows for Claude Code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Status: Under Development](https://img.shields.io/badge/Status-Under%20Development-orange.svg)]()
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
+
+**This project is under active development.** We're building this in the open and welcome contributions!
 
 ## The Problem
 

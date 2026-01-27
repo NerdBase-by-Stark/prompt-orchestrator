@@ -30,9 +30,13 @@ Output: PM-ORCHESTRATION.md + CONTEXT.md + subagent-tasks/*.md
 
 ### 1.3 Target Users
 
+**Primary:** Power users who understand AI workflows but aren't senior coders who would build orchestration files manually.
+
 - Developers using Claude Code for complex tasks
 - Teams running multi-step AI workflows
 - Anyone hitting quality issues with large prompts
+
+**Not:** Senior engineers who prefer hand-crafting orchestration (they can use templates directly)
 
 ---
 
@@ -54,10 +58,11 @@ Output: PM-ORCHESTRATION.md + CONTEXT.md + subagent-tasks/*.md
 
 ### 2.2 Non-Goals (v1)
 
-- Executing the workflow (use Claude Code Task tool)
 - GUI/visual workflow builder
 - Integration with external frameworks (LangGraph, CrewAI)
 - Real-time workflow modification during execution
+
+**Note:** Execution IS a goal - the skill analyzes, generates, AND triggers execution.
 
 ---
 
@@ -272,16 +277,40 @@ The skill should recognize and apply these patterns:
    - Shared state
 3. SCORE complexity
 4. IF score < threshold:
-   - RETURN "Monolithic execution recommended"
+   - INFORM user "Monolithic execution recommended"
+   - ASK: proceed anyway or execute directly?
 5. ELSE:
    - SEQUENCE tasks (topological sort by dependencies)
    - DETECT parallel opportunities
    - GENERATE PM-ORCHESTRATION.md
    - GENERATE CONTEXT.md
    - FOR EACH task:
-     - GENERATE subagent-tasks/{task}.md
-6. RETURN file paths
+     - GENERATE subagent-tasks/{task}.md with numbered prefix (01-, 02-, etc.)
+6. EXECUTE workflow:
+   - Load PM-ORCHESTRATION.md
+   - FOR EACH task in sequence:
+     - Spawn subagent with task file
+     - Wait for STATUS: COMPLETE/FAILED
+     - Update progress tracker
+     - IF FAILED: halt and report
+7. REPORT final status
 ```
+
+### 5.4 File Naming Convention
+
+Task files auto-named with pattern: `{order}-{verb}-{noun}.md`
+
+Examples:
+- `01-setup-environment.md`
+- `02-implement-logging.md`
+- `03-add-verification.md`
+- `04-write-tests.md`
+- `05-validate-output.md`
+
+This ensures:
+- Clear execution order at a glance
+- Alphabetical sorting matches execution order
+- Descriptive names for debugging
 
 ---
 
@@ -337,12 +366,22 @@ The skill should recognize and apply these patterns:
 
 ---
 
-## 9. Open Questions
+## 9. Decisions & Open Questions
 
-1. **Template format:** Markdown vs YAML vs JSON for task files?
-2. **Execution integration:** Should skill also trigger execution, or just generate?
-3. **Feedback loop:** How to capture and learn from execution results?
-4. **Naming conventions:** How to auto-generate meaningful task file names?
+### Resolved Decisions
+
+| Question | Decision | Rationale |
+|----------|----------|-----------|
+| **Template format** | Markdown | Readable, easy to edit, works with Claude Code |
+| **Execution** | Yes, analyze + generate + execute | Full workflow - don't leave user with files to run manually |
+| **Naming conventions** | Auto-generate with baked-in steps | Files should be deployment-ready, numbered for sequence |
+
+### Open Questions
+
+1. **Feedback loop:** How to capture and learn from execution results?
+   - Need to explore what data is available post-execution
+   - Could track: success/failure, time taken, manual interventions needed
+   - Storage: local file? agent memory? separate log?
 
 ---
 

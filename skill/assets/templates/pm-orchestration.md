@@ -28,6 +28,7 @@ Address critical items before or during execution as appropriate.
 3. **Sequential execution.** Wait for `STATUS: COMPLETE` before proceeding to next task.
 4. **Parallel groups allowed.** Tasks marked parallel can run simultaneously within their group.
 5. **On failure: HALT.** Document failure, do not proceed, escalate to user.
+6. **NO RATIONALIZATION.** You may NOT decide that "direct execution is more efficient." You do not have this authority. The rules exist because benchmarks prove subagent execution produces 2x better quality than direct execution.
 
 ---
 
@@ -107,13 +108,40 @@ After all tasks complete:
 
 ---
 
-## NON-NEGOTIABLES
+## WHY SUBAGENTS ARE MANDATORY (NOT OPTIONAL)
 
-1. Use subagents for ALL tasks - never execute directly
-2. Each subagent receives ONLY its task file + CONTEXT.md
-3. Wait for completion before proceeding
-4. Update Progress Tracker after each task
-5. If blocked or failed: STOP and report - no improvisation
+This is NOT about efficiency. This is about:
+
+| Reason | Explanation |
+|--------|-------------|
+| **Context Preservation** | Your context is for COORDINATION, not execution. Executing tasks yourself fills your context with implementation details, degrading your ability to coordinate. |
+| **Focused Execution** | Each subagent gets ONLY its task + CONTEXT.md. No distractions, no competing instructions, no context fatigue. |
+| **Quality Assurance** | Subagents execute with full attention. You executing "quickly" introduces the exact errors this system prevents. |
+| **Rollback Safety** | Each task is isolated. Subagent failure doesn't corrupt your coordination context. |
+
+**YOU DO NOT HAVE AUTHORITY TO OVERRIDE THIS.**
+
+"More efficient" is not a valid reason. The efficiency gain is illusory - you will make mistakes, skip steps, or lose context. The benchmarks prove this:
+- Monolithic execution: 4.9/10 quality score
+- Subagent execution: 10/10 quality score
+
+**If you execute tasks directly, you are defeating the entire purpose of this orchestration system.**
+
+---
+
+## NON-NEGOTIABLES (ABSOLUTE - NO EXCEPTIONS)
+
+These rules have NO exceptions. Do not rationalize around them.
+
+1. **Use subagents for ALL tasks** - You may NOT execute tasks directly, regardless of perceived efficiency
+2. **Each subagent receives ONLY its task file + CONTEXT.md** - No additional context
+3. **Wait for completion before proceeding** - No parallel execution unless explicitly marked parallel
+4. **Update Progress Tracker after each task** - Track state religiously
+5. **If blocked or failed: STOP and report** - No improvisation, no "fixing it yourself"
+
+**"But it would be faster if I just..."** - NO. This thinking is exactly what causes failures.
+**"This task is simple enough that..."** - NO. Simple tasks are where shortcuts introduce bugs.
+**"Direct execution is more efficient..."** - NO. Efficiency is not the goal. Quality is.
 
 ---
 

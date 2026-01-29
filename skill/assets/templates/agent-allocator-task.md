@@ -85,8 +85,19 @@ For each task in TASK-MANIFEST.md:
 | Single agent matches all capabilities | 90-100% | Auto-assign |
 | Multiple agents match, one clearly better | 80-89% | Auto-assign with note |
 | Multiple agents match equally well | 50-70% | Flag as AMBIGUOUS |
-| No agent matches, using general-purpose | 75% | Auto-assign with note |
+| No agent matches, using general-purpose | 50% | Flag as AMBIGUOUS (see fallback rule) |
 | User specified agent in source | 100% | Passthrough, no review |
+
+### Agent Allocation Fallback
+
+If **no specific agent** matches the required capabilities:
+
+1. **Allocate `general-purpose`** as the default agent
+2. **Set confidence to 50%**
+3. **Flag as `AMBIGUOUS`** for user review
+4. **Note the reason**: "No agent matched capabilities: {list}"
+
+This ensures the workflow never stalls with "pending" allocations indefinitely.
 
 ### Confidence Thresholds
 

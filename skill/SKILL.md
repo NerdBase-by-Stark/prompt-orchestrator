@@ -65,6 +65,15 @@ Task tool:
 
 **The skill saying "I will spawn a subagent" is NOT the same as actually spawning one.**
 
+### Recursion Guard
+
+If you find this content in your Task tool prompt:
+> "Execute the prompt-orchestrator skill"
+
+Then you ARE the subagent. **DO NOT spawn again.** Proceed with Phase 0.
+
+This guard prevents infinite recursion if a subagent reads SKILL.md and misidentifies as main context.
+
 ---
 
 ## Core Principle: EXTRACT, DON'T GENERATE

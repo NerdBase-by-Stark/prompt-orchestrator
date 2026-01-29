@@ -1,12 +1,20 @@
 # Task {{TASK_ORDER}}: {{TASK_NAME}}
 
-## Metadata
-| Field | Value |
-|-------|-------|
-| Phase | {{PHASE_NUMBER}} |
-| Dependencies | {{BLOCKERS}} |
-| Source Section | {{SOURCE_SECTION_HEADER}} |
-| Source Lines | {{SOURCE_LINE_START}}-{{SOURCE_LINE_END}} |
+## Source Reference
+
+**Document**: `{{SOURCE_DOCUMENT_PATH}}`
+
+**Primary Section**: {{PRIMARY_SECTION_HEADER}}
+- Lines: {{PRIMARY_LINE_START}}-{{PRIMARY_LINE_END}}
+- Purpose: {{PRIMARY_PURPOSE}}
+
+**Related Sections** (from semantic scan):
+
+| Section | Lines | Relationship | Why Bundled |
+|---------|-------|--------------|-------------|
+| {{RELATED_SECTION_1}} | {{LINES_1}} | {{RELATIONSHIP_1}} | {{REASON_1}} |
+
+**Total Lines Extracted**: {{TOTAL_LINES}}
 
 ---
 
@@ -16,24 +24,35 @@
 
 ---
 
-## Source Reference
-
-**Document**: `{{SOURCE_DOCUMENT_PATH}}`
+## Extracted Content
 
 > **IMPORTANT**: The content below is EXTRACTED VERBATIM from the source document.
 > Implement exactly as specified - do not modify patterns, APIs, or structure.
 
----
+### {{PRIMARY_SECTION_HEADER}}
 
-## Extracted Content
+{{EXTRACTED_PRIMARY_CONTENT}}
 
-{{EXTRACTED_CONTENT}}
+### {{RELATED_SECTION_HEADER}}
+
+{{EXTRACTED_RELATED_CONTENT}}
 
 ---
 
 ## Validation Criteria (from source)
 
 {{EXTRACTED_VALIDATION}}
+
+---
+
+## Extraction Certification
+
+- [ ] Self-contained: Subagent can complete with only this file
+- [ ] Rollback included: {{YES_NO_NA}} (required if destructive operation)
+- [ ] Backup included: {{YES_NO_NA}} (required if data operation)
+- [ ] Prerequisites included: {{YES_NO_NA}}
+- [ ] Line count: {{TOTAL_LINES}} lines (flag if < 50)
+- [ ] Semantic scan performed: Yes
 
 ---
 

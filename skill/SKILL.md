@@ -267,6 +267,64 @@ For each identified task boundary:
 3. List code blocks within that range
 4. Note dependencies (what must complete first)
 
+**2.1.1 Semantic Content Bundling (MANDATORY)**
+
+Before finalizing task boundaries, perform a **full-document semantic scan** to identify ALL content related to each task, regardless of where it appears in the source document.
+
+**Why This Matters**
+
+Literal section boundaries capture only the primary content. Related content (backup procedures, rollback plans, data migration, prerequisites) often appears in separate sections but is ESSENTIAL for task execution. Missing this content causes task failures.
+
+| Extraction Type | Result | Risk |
+|-----------------|--------|------|
+| Literal only | 42 lines (Phase 1 only) | Task lacks rollback, backup, data handling |
+| Semantic bundle | 148 lines (Phase 1 + related) | Self-contained, executable task |
+
+**Semantic Scan Process**
+
+For EACH task boundary, scan the ENTIRE source document for these patterns:
+
+| Pattern | Keywords to Search | Relationship |
+|---------|-------------------|--------------|
+| Backup/Restore | "backup", "restore", "snapshot", "preserve" | Safety net for destructive operations |
+| Rollback | "rollback", "revert", "undo", "recover", "if failed" | Recovery path |
+| Data Migration | "migrate", "transfer", "export", "import", "move data" | Data dependencies |
+| Prerequisites | "before you begin", "prerequisites", "requirements", "first" | Setup requirements |
+| Validation | "verify", "test", "confirm", "check", "validate" | Completion criteria |
+| Error Handling | "if error", "exception", "failure", "fallback" | Failure paths |
+
+**Bundling Rules**
+
+1. **Destructive operations MUST include rollback**: DELETE, DROP, REMOVE, ARCHIVE, WIPE, CLEAR → bundle rollback section
+2. **Data operations MUST include migration plan**: Database, file, or state changes → bundle backup/migration sections
+3. **Setup tasks MUST include prerequisites**: Archive/setup → bundle prerequisite checks
+4. **Distance is irrelevant**: Content at line 900 is as essential as content at line 50
+
+**Bundling Decision Heuristic**
+
+Ask: "If a subagent executes ONLY this extracted content, can they safely complete the task AND recover from failure?"
+
+- If NO → Find and bundle the missing pieces
+- If YES → Extraction is complete
+
+**Example: Archive/Setup Task**
+
+**WRONG** (literal extraction):
+```
+Source: Phase 1 (lines 50-92) = 42 lines
+Missing: Backup commands (200-215), Rollback plan (450-465), Data migration (310-340)
+Result: Subagent cannot recover from failure
+```
+
+**RIGHT** (semantic bundling):
+```
+Primary: Phase 1 (lines 50-92)
++ Related: Backup Procedures (lines 200-215)
++ Related: Rollback Plan (lines 450-465)
++ Related: Data Migration (lines 310-340)
+Total: 148 lines - complete, self-contained
+```
+
 **2.2 Name Tasks**
 
 Use pattern: `{order:02d}-{verb}-{noun}.md`
@@ -307,17 +365,49 @@ Extract verb/noun from source section headers:
 # Task: {name}
 
 ## Source Reference
+
 **Document**: {source_path}
-**Section**: {section_header}
-**Lines**: {start_line}-{end_line}
+
+**Primary Section**: {main_header}
+- Lines: {start}-{end}
+- Purpose: {what this section provides}
+
+**Related Sections** (from semantic scan):
+
+| Section | Lines | Relationship | Why Bundled |
+|---------|-------|--------------|-------------|
+| {header} | {A}-{B} | {type} | {reason} |
+
+**Total Lines Extracted**: {sum}
+
+---
 
 ## Extracted Content
 
-{VERBATIM_COPY_OF_SOURCE_SECTION}
+### {Primary Section Header}
+
+{VERBATIM_COPY_OF_PRIMARY_SECTION}
+
+### {Related Section 1 Header}
+
+{VERBATIM_COPY_OF_RELATED_SECTION}
+
+---
 
 ## Validation Criteria (from source)
 
 {VERBATIM_COPY_OF_SOURCE_VALIDATION}
+
+---
+
+## Extraction Certification
+
+- [ ] Self-contained: Subagent can complete with only this file
+- [ ] Rollback included: Yes/No/N/A (required if destructive)
+- [ ] Backup included: Yes/No/N/A (required if data operation)
+- [ ] Prerequisites included: Yes
+- [ ] Line count: {N} lines (flag if < 50)
+- [ ] Semantic scan performed: Yes
 
 ## Output Format
 [standard completion format]
@@ -555,6 +645,46 @@ Observations about task ordering and dependencies:
 - Substitute APIs
 - Include suggestions or observations (those go in SUGGESTIONS.md)
 
+**2.7.1 Extraction Completeness Check (MANDATORY)**
+
+Before finalizing EACH task file, verify this checklist. ALL items must pass.
+
+**Completeness Checklist**
+
+| Check | Question | If NO |
+|-------|----------|-------|
+| Self-Containment | Can subagent complete with ONLY this file + CONTEXT.md? | Bundle missing dependencies |
+| Rollback Coverage | If task fails, does extraction include recovery steps? | Find and bundle rollback section |
+| Backup Inclusion | If task modifies data, does extraction include backup? | Find and bundle backup section |
+| Prerequisites | Does extraction include "before you begin" requirements? | Find and bundle prerequisites |
+| Validation | Does extraction include completion verification? | Find and bundle validation criteria |
+
+**Line Count Heuristic**
+
+| Lines | Assessment | Action |
+|-------|------------|--------|
+| < 30 | Almost certainly incomplete | STOP - Re-scan entire source |
+| 30-50 | Likely incomplete | Verify ALL checklist items |
+| 50-100 | Possibly complete | Normal verification |
+| 100+ | Likely complete | Check not over-bundled |
+
+**Under 50 Lines = Automatic Re-scan Trigger**
+
+If extraction yields < 50 lines:
+1. STOP and re-read ENTIRE source document
+2. Search for ALL semantic patterns (section 2.1.1)
+3. Verify every checklist item passes
+4. Document why extraction is genuinely small OR bundle additional content
+
+**Destructive Operation Flag**
+
+If task contains ANY of: `DELETE, DROP, REMOVE, TRUNCATE, ARCHIVE, WIPE, CLEAR, PURGE, RESET`
+
+Then MANDATORY:
+1. Search entire source for: rollback, restore, backup, undo, revert, recover
+2. Bundle ALL matching sections
+3. If no rollback exists in source → note as CRITICAL gap in SUGGESTIONS.md
+
 **2.8 Output Location**
 
 ```
@@ -736,6 +866,47 @@ SUGGESTIONS.md contains {N} observations.
 **RIGHT**: PM spawns subagents via Task tool for EVERY task, regardless of perceived complexity or efficiency.
 
 The PM's job is COORDINATION. The moment you start executing, you've abandoned your role.
+
+### 7. Narrow Extraction
+
+**Definition**: Extracting only literal section boundaries while ignoring semantically related content elsewhere in the source.
+
+**WRONG** (literal boundary only):
+```markdown
+## Source Reference
+**Section**: Phase 1: Archive/Setup (lines 50-92)
+
+[Only 42 lines extracted]
+
+Problems:
+- No backup commands (exist at lines 200-215)
+- No restore procedures (exist at lines 450-465)
+- Subagent cannot recover from failure
+```
+
+**RIGHT** (semantic bundling):
+```markdown
+## Source Reference
+**Primary Section**: Phase 1: Archive/Setup (lines 50-92)
+**Related Sections**:
+| Section | Lines | Relationship |
+|---------|-------|--------------|
+| Backup Procedures | 200-215 | Pre-execution safety |
+| Rollback Plan | 450-465 | Failure recovery |
+
+**Total Lines Extracted**: 148
+
+[All 148 lines from primary + related sections]
+
+Result: Self-contained, subagent can backup and recover
+```
+
+**Detection**: This anti-pattern is likely when:
+- Extracted task < 50 lines for a substantive phase
+- Task involves destructive operations but no rollback in extraction
+- Source has "Backup", "Rollback", or "Recovery" sections that weren't bundled
+
+**Mantra**: "Extract the TASK, not the SECTION. A task includes everything needed to complete it safely."
 
 ---
 

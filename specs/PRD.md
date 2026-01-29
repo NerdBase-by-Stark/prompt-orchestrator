@@ -1,9 +1,9 @@
 # Product Requirements Document: Prompt Orchestrator
 
-> Version: 0.3.0
+> Version: 0.4.0
 > Author: NerdBase-by-Stark
 > Created: 2026-01-27
-> Updated: 2026-01-27
+> Updated: 2026-01-29
 > Status: In Development
 
 ---
@@ -26,7 +26,7 @@ A Claude Code skill that automatically decomposes complex prompts into an orches
 
 ```
 Input:  Complex prompt or plan document
-Output: PM-ORCHESTRATION.md + CONTEXT.md + subagent-tasks/*.md + SUGGESTIONS.md
+Output: PM-ORCHESTRATION.md + TASK-MANIFEST.md + CONTEXT.md + subagent-tasks/*.md + SUGGESTIONS.md
 ```
 
 ### 1.3 Execution Model
@@ -162,7 +162,71 @@ Signals Detected:
 
 ---
 
-## 4. User Stories
+## 4. Agent Allocator System
+
+### 4.1 Overview
+
+The Agent Allocator automatically matches tasks to the best available agent/skill before execution begins. This prevents the PM from guessing agents and enables optimal agent selection based on task capabilities.
+
+### 4.2 TASK-MANIFEST.md
+
+Generated during orchestration, contains:
+
+| Column | Purpose |
+|--------|---------|
+| Task File | Path to task file |
+| Capabilities | Inferred capabilities (lua, testing, networking, etc.) |
+| User-Specified Agent | Agent explicitly named in source (passthrough) |
+| Allocated Agent | Assigned by Agent Allocator |
+| Confidence | Confidence score (%) |
+
+### 4.3 Agent Discovery
+
+The Allocator discovers available agents from:
+1. **Task tool definition** - `subagent_type` parameter lists available agent types
+2. **System reminders** - Lists available skills
+
+### 4.4 Capability Inference
+
+| Content Pattern | Capability Tag |
+|-----------------|----------------|
+| Lua code, Q-SYS APIs | `lua`, `q-sys` |
+| Test, validation | `testing` |
+| UI, layout, components | `frontend`, `ui` |
+| API, HTTP, networking | `networking`, `api` |
+| Auth, credentials | `auth`, `security` |
+| File operations | `file-ops` |
+
+### 4.5 Confidence Scoring
+
+| Scenario | Confidence | Action |
+|----------|------------|--------|
+| Single best match | 90-100% | Auto-assign |
+| Good match, alternatives exist | 80-89% | Auto-assign with note |
+| Multiple equal matches | 50-70% | Flag as AMBIGUOUS |
+| No match, using general-purpose | 75% | Auto-assign with note |
+| User-specified agent | 100% | Passthrough |
+
+### 4.6 Execution Flags
+
+| Flag | Behavior |
+|------|----------|
+| `--ambiguous-only` | (DEFAULT) Ask user only about tasks with <80% confidence |
+| `--confirm-agents` | Show full allocation list, await confirmation |
+| `--trust-allocator` | Accept all allocations without review |
+
+### 4.7 PM Context Preservation
+
+The Allocator runs as Task 0 (subagent) to:
+- Keep PM context clean (coordination only)
+- Delegate capability matching to specialist
+- Return simple mapping table for PM to use
+
+Allocator reads ONLY `TASK-MANIFEST.md` (~500 tokens), never individual task files.
+
+---
+
+## 5. User Stories
 
 ### 4.1 Primary Flow
 
@@ -477,7 +541,16 @@ This ensures:
 - [x] Auto-subagent execution model
 - [x] Good PM orchestration reference documentation
 
-### Phase 4: Learning (v0.4.0)
+### Phase 4: Agent Allocator (v0.4.0)
+- [x] TASK-MANIFEST.md generation with capability inference
+- [x] Agent Allocator subagent (Task 0)
+- [x] Agent discovery from Task tool definition and system reminders
+- [x] Confidence scoring (80%+ auto-assign, <80% ambiguous)
+- [x] Execution flags (--ambiguous-only default, --confirm-agents, --trust-allocator)
+- [x] User choice for ambiguous tasks only
+- [x] PM context preservation (allocator reads manifest only)
+
+### Phase 5: Learning (v0.5.0)
 - [ ] Execution feedback integration
 - [ ] Template refinement based on outcomes
 - [ ] Pattern library
@@ -496,6 +569,9 @@ This ensures:
 | **PM detection theme** | Stargate SG-1 | User preference; adds character while remaining functional |
 | **Subagent execution** | Always run as subagent | Preserve user's main context; isolate decomposition work |
 | **User choice on existing orchestration** | Present options (USE AS-IS/REBUILD/BOTH) | Respect existing work; give user agency |
+| **Agent allocation** | Task 0 Allocator subagent | PM stays lean; delegate matching to specialist |
+| **Agent discovery** | Allocator reads Task tool definition | Subagent has same visibility as PM; no hardcoded lists |
+| **Allocation confirmation** | Ambiguous-only by default | Balance user control with minimal friction |
 
 ### Open Questions
 

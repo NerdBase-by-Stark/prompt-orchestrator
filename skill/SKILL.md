@@ -70,6 +70,7 @@ This skill addresses common failure modes in complex prompts:
 | File | Purpose | Content Source |
 |------|---------|----------------|
 | `PM-ORCHESTRATION.md` | Coordination file with task sequence | Extracted from source structure |
+| `TASK-MANIFEST.md` | **Task capability mapping for Agent Allocator** | **Generated from task analysis** |
 | `CONTEXT.md` | Shared context for all subagents | Extracted from source overview/constraints |
 | `SUGGESTIONS.md` | **Advisory observations and recommendations** | **Generated analysis (NOT in task files)** |
 | `subagent-tasks/*.md` | Individual task files | **VERBATIM excerpts from source** |
@@ -247,6 +248,14 @@ Extract verb/noun from source section headers:
 - Dependencies from source structure
 - Link to source document
 
+**TASK-MANIFEST.md** (use template: `assets/templates/task-manifest.md`):
+- One row per task file generated
+- Capabilities: inferred from task content using Capability Inference Rules (see below)
+- User-Specified Agent: if source prompt explicitly names an agent for a task
+- Allocated Agent: left as "pending" - filled by Agent Allocator (Task 0)
+- Confidence: left as "pending" - filled by Agent Allocator
+- Execution mode flag (default: `--ambiguous-only`)
+
 **CONTEXT.md**:
 - Project paths from source
 - Technologies mentioned in source
@@ -274,7 +283,31 @@ Extract verb/noun from source section headers:
 [standard completion format]
 ```
 
-**2.4 PM-ORCHESTRATION.md Required Sections**
+**2.4 Capability Inference Rules**
+
+When generating TASK-MANIFEST.md, infer capabilities from task content:
+
+| Content Pattern | Capability Tag |
+|-----------------|----------------|
+| Lua code, Q-SYS APIs, Controls | `lua`, `q-sys` |
+| Test, validation, verify, assertion | `testing` |
+| UI, layout, components, pages, UCI | `frontend`, `ui` |
+| API, HTTP, sockets, networking, WebSocket | `networking`, `api` |
+| Auth, login, credentials, Logon | `auth`, `security` |
+| File operations, scaffolding, mkdir | `file-ops` |
+| Database, storage, persistence | `database` |
+| Documentation, comments, README | `documentation` |
+| Refactoring, cleanup, restructuring | `refactoring` |
+| Config, environment, settings | `config` |
+| CI/CD, deployment, Docker, build | `devops` |
+
+**Rules:**
+- Tag ALL relevant capabilities per task (usually 2-4 tags)
+- If task mentions specific skill (e.g., "use qsys-plugin-development"), note as User-Specified Agent
+- Capabilities are used by Agent Allocator (Task 0) to match tasks to best available agents
+- When uncertain, use broader tags (e.g., `lua` rather than `lua-advanced`)
+
+**2.5 PM-ORCHESTRATION.md Required Sections**
 
 Every generated PM-ORCHESTRATION.md MUST include these sections verbatim (adjust only variable placeholders):
 
@@ -378,7 +411,7 @@ These rules have NO exceptions. Do not rationalize around them.
 
 ---
 
-**2.5 Create SUGGESTIONS.md**
+**2.6 Create SUGGESTIONS.md**
 
 Compile all observations from Phase 1.3:
 
@@ -463,7 +496,7 @@ Observations about task ordering and dependencies:
 **Recommendation**: Review Critical items before executing tasks.
 ```
 
-**2.6 Extraction Rules**
+**2.7 Extraction Rules**
 
 | Source Element | Extraction Method |
 |----------------|-------------------|
@@ -482,7 +515,7 @@ Observations about task ordering and dependencies:
 - Substitute APIs
 - Include suggestions or observations (those go in SUGGESTIONS.md)
 
-**2.7 Output Location**
+**2.8 Output Location**
 
 ```
 {output_dir}/

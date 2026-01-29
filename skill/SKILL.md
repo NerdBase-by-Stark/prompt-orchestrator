@@ -9,21 +9,61 @@ description: "Decomposes complex prompts into orchestrated multi-task workflows.
 
 ---
 
-## Execution Model
+## Execution Model (MANDATORY SELF-CHECK)
 
-**This skill ALWAYS runs as a subagent** (via Task tool) to preserve the user's main conversation context.
+**STOP. Before doing ANYTHING else, perform this check:**
+
+### Am I Running in User's Main Context?
+
+If you are executing this skill in the user's main conversation (not as a spawned subagent):
+
+1. **DO NOT** read the source document
+2. **DO NOT** analyze anything
+3. **DO NOT** create any files
+4. **IMMEDIATELY** spawn yourself as a subagent:
+
+```
+Task tool:
+  subagent_type: "general-purpose"
+  prompt: |
+    Execute the prompt-orchestrator skill.
+    Source: {source_file_or_prompt}
+    Output: {output_directory}
+
+    Read the skill at ~/.claude/skills/prompt-orchestrator/SKILL.md
+    Follow all phases. Return results when complete.
+```
+
+5. **STOP** after spawning. Return ONLY the subagent's results.
+6. **DO NOT** narrate "I will spawn a subagent" and then continue working.
+
+### Why This Matters
 
 | Principle | Implementation |
 |-----------|----------------|
-| Context Preservation | Spawn orchestrator as background/separate agent |
-| Clean Handoff | Return results summary to parent conversation |
-| No Context Pollution | Decomposition work never consumes user's primary context |
+| Context Preservation | Orchestration work happens in isolated subagent context |
+| Clean Handoff | User's main context receives only the results summary |
+| No Context Pollution | Decomposition never consumes user's primary context |
 
-The orchestrator should:
-1. Be spawned as a background/separate agent via Task tool
-2. Perform all analysis and file generation in isolated context
-3. Return structured results to the parent conversation
-4. Never consume the user's primary context with decomposition work
+### WRONG vs RIGHT
+
+**WRONG** (what you did):
+```
+"Let me spawn this as a subagent to preserve your context..."
+[Reads file]
+[Analyzes]
+[Creates files]
+[Continues working in main context]
+```
+
+**RIGHT** (what you must do):
+```
+[Uses Task tool to spawn subagent]
+[STOPS]
+[Returns only subagent's result when complete]
+```
+
+**The skill saying "I will spawn a subagent" is NOT the same as actually spawning one.**
 
 ---
 

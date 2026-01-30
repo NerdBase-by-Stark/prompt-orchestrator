@@ -12,18 +12,25 @@
 
 **Ever given Claude a big task and watched it forget things halfway through?** That's context fatigue.
 
-This tool fixes that by acting like a **project manager for your AI tasks**:
+This tool **prepares your complex tasks for better execution** - it doesn't do the work itself, it sets up the work to be done properly.
 
-1. **You give it a big, complex request** (like "build me an app with auth, database, and tests")
-2. **It breaks it into smaller pieces** (Task 1: Setup, Task 2: Database, Task 3: Auth...)
-3. **Each piece runs in its own fresh context** - no fatigue, no forgotten instructions
-4. **A coordinator keeps track** and runs tasks in the right order
+**What it does:**
 
-**Think of it like this:** Instead of asking one person to memorize and execute a 50-page instruction manual, you give 10 specialists one page each. Each specialist does their bit perfectly, and a manager coordinates the handoffs.
+1. **You give it a big, complex request** (like a detailed implementation plan)
+2. **It reads through and breaks it into smaller, focused task files**
+3. **It creates a coordination file** that tells a PM how to run each task in order
+4. **It flags potential issues** without changing your original content
 
-**Results from testing:**
-- Monolithic prompt: 4.9/10 quality
-- Orchestrated tasks: 10/10 quality
+**What you get:**
+- A folder of task files ready to be executed one-by-one
+- Each task can run in fresh context - no fatigue, no forgotten instructions
+- A manifest showing which AI agent type suits each task
+
+**Think of it like this:** You hand over a 50-page instruction manual. This tool doesn't build the thing - it creates a project plan: "Here's Task 1 for the setup specialist, Task 2 for the database specialist..." Then you (or Claude) can execute that plan.
+
+**Why bother?**
+- Monolithic prompt execution: 4.9/10 quality
+- Orchestrated task execution: 10/10 quality
 
 ---
 

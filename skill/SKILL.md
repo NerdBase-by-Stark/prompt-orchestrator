@@ -318,6 +318,39 @@ Structure:
     └── ...
 ```
 
+**2.7 Extraction Validation (MANDATORY)**
+
+Before completing Phase 2, verify extraction completeness:
+
+1. **Re-scan source** - List all major sections/headers
+2. **Map to output** - Where did each land?
+3. **Count verification**:
+   - Code blocks: Source X → Extracted Y
+   - Phases/sections: Source X → Tasks Y
+   - Validation criteria: Source X → Extracted Y
+
+**Generate coverage proof** in PM-ORCHESTRATION.md:
+
+```markdown
+## Extraction Coverage
+
+| Source Section | Lines | Extracted To | Status |
+|----------------|-------|--------------|--------|
+| Phase 1: Setup | 50-92 | Task 01 | ✓ |
+| Phase 2: API | 100-300 | Task 02 | ✓ |
+| Rollback Plan | 450-480 | Task 01, 06 | ✓ bundled |
+| Port Config | 500-520 | CONTEXT.md | ✓ deduped |
+
+**Totals**:
+- Source sections: X | Extracted: Y | Coverage: Z%
+- Code blocks: X | Extracted: Y
+- Validation criteria: X | Extracted: Y
+```
+
+**If any section shows NOT EXTRACTED** → Stop, re-scan, bundle before proceeding.
+
+**This is your proof of work.** The coverage table proves you did your job correctly.
+
 ---
 
 ### Phase 3: Execute

@@ -36,7 +36,7 @@
 
 1. **Tag ALL relevant capabilities** per task (usually 2-4 tags)
 2. If task mentions specific skill (e.g., "use qsys-plugin-development"), note as **User-Specified Agent**
-3. Capabilities are used by Agent Allocator (Task 0) to match tasks to best available agents
+3. Capabilities are used during orchestration to pre-fill agent allocations in TASK-MANIFEST.md
 4. When uncertain, use **broader tags** (e.g., `lua` rather than `lua-advanced`)
 5. If task contains code blocks, infer language from syntax
 

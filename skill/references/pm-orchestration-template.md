@@ -122,7 +122,7 @@ These rules have NO exceptions. Do not rationalize around them.
 
 | Task | Started | Completed | Notes |
 |------|---------|-----------|-------|
-| Task 0 | | | |
+| Task 1 | | | |
 | Task 1 | | | |
 ```
 

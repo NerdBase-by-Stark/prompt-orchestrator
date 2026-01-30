@@ -4,58 +4,6 @@
 > Complexity Score: {{COMPLEXITY_SCORE}}/100
 > Total Tasks: {{TASK_COUNT}}
 > Source Document: `{{SOURCE_DOCUMENT_PATH}}`
-> Execution Mode: `{{EXECUTION_MODE}}`
-
----
-
-## TASK 0: AGENT ALLOCATION (MANDATORY FIRST)
-
-**Before ANY other task**, spawn the Agent Allocator to match tasks to agents.
-
-### Spawn Allocator
-
-```
-Task tool invocation:
-  subagent_type: "general-purpose"
-  prompt: |
-    You are the Agent Allocator.
-
-    Read: {{OUTPUT_DIR}}/TASK-MANIFEST.md
-    Read: {{TEMPLATE_DIR}}/agent-allocator-task.md (your instructions)
-
-    Discover available agents from your Task tool definition.
-    Match capabilities to agents.
-    Return updated manifest with allocations and confidence scores.
-```
-
-### After Allocator Returns
-
-**Based on execution mode ({{EXECUTION_MODE}}):**
-
-| Mode | Action |
-|------|--------|
-| `--trust-allocator` | Proceed with allocations immediately |
-| `--confirm-agents` | Show full allocation list to user, await confirmation |
-| `--ambiguous-only` (DEFAULT) | If no ambiguous tasks, proceed. If ambiguous exist, ask user ONLY about those. |
-
-### User Confirmation (when needed)
-
-```
-+-----------------------------------------------------+
-| Agent Allocation Complete                           |
-+-----------------------------------------------------+
-| [OK] {{AUTO_ASSIGNED_COUNT}} tasks auto-assigned (high confidence)       |
-| [??] {{AMBIGUOUS_COUNT}} tasks need your input                       |
-|                                                     |
-| AMBIGUOUS:                                          |
-{{AMBIGUOUS_TASK_LIST}}
-|                                                     |
-| [1] Use first suggestion for all                    |
-| [2] Let me choose each ambiguous task               |
-| [3] Review full allocation list                     |
-| [4] Trust allocator, proceed                        |
-+-----------------------------------------------------+
-```
 
 ---
 
@@ -70,6 +18,18 @@ The orchestrator identified {{SUGGESTION_COUNT}} observations:
 
 Suggestions are NOT included in task files - they are advisory only.
 Address critical items before or during execution as appropriate.
+
+---
+
+## AGENT ALLOCATIONS (PRE-FILLED)
+
+Agent allocations are in `TASK-MANIFEST.md` - filled during orchestration.
+
+| Task | Allocated Agent | Confidence |
+|------|-----------------|------------|
+{{ALLOCATION_SUMMARY}}
+
+All allocations above 80% confidence. Review TASK-MANIFEST.md if you need to override.
 
 ---
 
@@ -101,18 +61,13 @@ Task files contain **EXTRACTED content** from the source document - not generate
 
 | Order | Task File | Description | Blocker | Parallel | Allocated Agent |
 |-------|-----------|-------------|---------|----------|-----------------|
-| 0 | (Agent Allocator) | Match tasks to agents | - | No | general-purpose |
 {{TASK_SEQUENCE_ROWS}}
 
 ---
 
 ## EXECUTION INSTRUCTIONS
 
-### Task 0: Agent Allocation (ALWAYS FIRST)
-
-See "TASK 0: AGENT ALLOCATION" section above. This must complete before any other task.
-
-### For Each Subsequent Task
+### For Each Task
 
 1. **Verify Blocker Completion**
    - Check Progress Tracker below
@@ -125,14 +80,12 @@ See "TASK 0: AGENT ALLOCATION" section above. This must complete before any othe
 
 3. **Spawn Subagent**
    ```
-   TaskCreate:
-     subject: "Execute {{TASK_FILE}}"
+   Task tool invocation:
      subagent_type: "{{ALLOCATED_AGENT}}"
-     description: |
+     prompt: |
        Read CONTEXT.md: {{CONTEXT_PATH}}
        Execute task: {{TASK_PATH}}
        Report: STATUS: COMPLETE or FAILED
-     activeForm: "Executing {{TASK_NAME}}"
    ```
 
 4. **Wait for Completion**
@@ -146,7 +99,7 @@ See "TASK 0: AGENT ALLOCATION" section above. This must complete before any othe
 ### Parallel Execution
 
 Tasks marked `Yes` in Parallel column:
-- Spawn all simultaneously using parallel TaskCreate calls
+- Spawn all simultaneously using parallel Task tool calls
 - Wait for ALL to complete before next group
 - Any failure halts the parallel group
 
@@ -156,7 +109,6 @@ Tasks marked `Yes` in Parallel column:
 
 | Task | Status | Started | Completed | Notes |
 |------|--------|---------|-----------|-------|
-| Task 0 (Allocator) | Not Started | | | |
 {{PROGRESS_TRACKER_ROWS}}
 
 **Status Values:** Not Started | In Progress | COMPLETE | FAILED | BLOCKED
@@ -196,13 +148,12 @@ This is NOT about efficiency. This is about:
 
 These rules have NO exceptions. Do not rationalize around them.
 
-1. **Run Task 0 (Agent Allocator) FIRST** - Before any other task
-2. **Use subagents for ALL tasks** - You may NOT execute tasks directly, regardless of perceived efficiency
-3. **Use the allocated agent** - Check TASK-MANIFEST.md for agent assignments
-4. **Each subagent receives ONLY its task file + CONTEXT.md** - No additional context
-5. **Wait for completion before proceeding** - No parallel execution unless explicitly marked parallel
-6. **Update Progress Tracker after each task** - Track state religiously
-7. **If blocked or failed: STOP and report** - No improvisation, no "fixing it yourself"
+1. **Use subagents for ALL tasks** - You may NOT execute tasks directly, regardless of perceived efficiency
+2. **Use the allocated agent** - Check TASK-MANIFEST.md for agent assignments
+3. **Each subagent receives ONLY its task file + CONTEXT.md** - No additional context
+4. **Wait for completion before proceeding** - No parallel execution unless explicitly marked parallel
+5. **Update Progress Tracker after each task** - Track state religiously
+6. **If blocked or failed: STOP and report** - No improvisation, no "fixing it yourself"
 
 **"But it would be faster if I just..."** - NO. This thinking is exactly what causes failures.
 **"This task is simple enough that..."** - NO. Simple tasks are where shortcuts introduce bugs.

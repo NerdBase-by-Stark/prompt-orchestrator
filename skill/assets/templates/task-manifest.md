@@ -67,5 +67,5 @@ Tasks requiring user decision (confidence <80% or multiple good matches):
 
 - Capabilities are inferred from task content during orchestration
 - User-specified agents (from source prompt) are passed through without review (confidence: 100%)
-- Allocated Agent and Confidence columns are filled by Agent Allocator (Task 0)
+- Allocated Agent and Confidence columns are pre-filled during orchestration
 - Tasks with confidence 80%+ are auto-assigned unless `--confirm-agents` flag is set

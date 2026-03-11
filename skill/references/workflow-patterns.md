@@ -74,10 +74,10 @@ Iterative refinement pattern from AFlow.
 
 **Generated Structure:**
 ```
-01-generate-guide.md (operator: Generate)
-02-review-guide.md (operator: Review, blocker: 01)
-03-revise-guide.md (operator: Revise, blocker: 02)
-04-validate-guide.md (operator: Test, blocker: 03)
+01-generate-guide.md (blocker: none)
+02-review-guide.md (blocker: 01)
+03-revise-guide.md (blocker: 02)
+04-validate-guide.md (blocker: 03)
 ```
 
 ### Pattern 4: Build-Test Pairs
@@ -156,13 +156,30 @@ Each implementation paired with its validation.
 ## Context
 Read first: `./CONTEXT.md`
 
+## Source Reference
+
+**Primary Section**: Configuration Requirements (lines 45-60)
+
+**Related Sections**: none
+
 ## Target
 Create `config/settings.yaml`
 
+## Scope Restriction
+This task ONLY covers creating the configuration file. Do NOT implement environment loading or validation logic.
+
 ## Requirements
+
+<extracted-source document="source-prompt.md" lines="45-60">
 1. Add database connection settings
 2. Add API rate limiting defaults
 3. Include environment variable overrides
+</extracted-source>
+
+## Extraction Certification
+- [ ] Content copied verbatim from source (no summarization)
+- [ ] All related sections bundled
+- [ ] No suggestions injected into task body
 
 ## Validation
 - [ ] File created at correct path
@@ -181,31 +198,56 @@ NOTES: [any issues]
 # TASK: Implement Authentication Service
 
 **Order**: 03
-**Operator**: Generate
 
 ## Context
 Read first: `./CONTEXT.md`
 **Blocker(s)**: 02-setup-database
 
+## Source Reference
+
+**Primary Section**: Authentication Implementation (lines 120-185)
+
+**Related Sections**:
+
+| Section | Lines | Relationship | Why Bundled |
+|---------|-------|--------------|-------------|
+| Security Requirements | 40-55 | Constraints | Hashing rounds, token expiry |
+| Redis Configuration | 200-215 | Infrastructure | Session storage dependency |
+| OAuth2 Setup | 310-340 | Feature scope | Provider integration |
+
 ## Target
 Implement `/src/services/auth.py` and `/src/routes/auth.py`
+
+## Scope Restriction
+This task ONLY covers the auth service and route handlers. Do NOT implement Redis setup (Task 02) or write tests (Task 04).
 
 ## Objective
 Create a complete authentication service with JWT tokens, password hashing, and session management.
 
 ## Requirements
+
+<extracted-source document="source-prompt.md" lines="120-185">
 1. Use bcrypt for password hashing (min 12 rounds)
 2. JWT tokens with 24h expiry for access, 7d for refresh
 3. Rate limiting: 5 login attempts per minute per IP
 4. Session storage in Redis
 5. Support for OAuth2 providers (Google, GitHub)
+</extracted-source>
 
 ## Implementation Steps
+
+<extracted-source document="source-prompt.md" lines="150-170">
 1. Create auth service class with login/logout/refresh methods
 2. Implement password hashing utilities
 3. Add JWT token generation and validation
 4. Create auth routes with rate limiting middleware
 5. Add session management with Redis backend
+</extracted-source>
+
+## Extraction Certification
+- [ ] Content copied verbatim from source (no summarization)
+- [ ] All related sections bundled
+- [ ] No suggestions injected into task body
 
 ## Validation Criteria
 - [ ] All auth routes respond correctly
@@ -217,7 +259,6 @@ Create a complete authentication service with JWT tokens, password hashing, and 
 ## Expected Output
 - `/src/services/auth.py` - Auth service class
 - `/src/routes/auth.py` - Route handlers
-- `/tests/test_auth.py` - Unit tests (if testing operator)
 
 ## Notes
 - Follow existing code style in `/src/services/`
@@ -230,58 +271,6 @@ CHANGES APPLIED: [files created/modified]
 FILES MODIFIED: [list]
 NOTES: [any issues]
 ```
-
-## Operator Application Guidelines
-
-### Generate Operator
-**Use for:** Creating new content, code, or documentation
-
-**Task naming:** `XX-create-*.md`, `XX-implement-*.md`, `XX-write-*.md`
-
-**Include in requirements:**
-- Specific output format
-- Quality standards
-- Style guidelines
-
-### Review Operator
-**Use for:** Self-critique, code review, document review
-
-**Task naming:** `XX-review-*.md`, `XX-check-*.md`
-
-**Include in requirements:**
-- Review criteria checklist
-- What to look for (bugs, style, completeness)
-- How to report findings
-
-### Revise Operator
-**Use for:** Iterative improvement based on review
-
-**Task naming:** `XX-revise-*.md`, `XX-fix-*.md`, `XX-improve-*.md`
-
-**Include in requirements:**
-- Reference to review findings
-- Specific changes required
-- When to stop iterating
-
-### Test Operator
-**Use for:** Validation, verification, testing
-
-**Task naming:** `XX-test-*.md`, `XX-validate-*.md`, `XX-verify-*.md`
-
-**Include in requirements:**
-- Test cases to execute
-- Expected outcomes
-- Pass/fail criteria
-
-### Ensemble Operator
-**Use for:** Multiple approaches, pick best result
-
-**Task naming:** `XX-ensemble-*.md`, `XX-compare-*.md`
-
-**Include in requirements:**
-- Multiple approaches to try
-- Evaluation criteria
-- Selection method
 
 ## Error Recovery Patterns
 

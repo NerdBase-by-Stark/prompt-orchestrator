@@ -25,6 +25,17 @@
 | cache, memoize, Redis | `caching` |
 | log, trace, debug, monitor | `observability` |
 | encryption, hash, SSL/TLS | `cryptography` |
+| TypeScript, .ts, .tsx, interface, type | `typescript` |
+| React, JSX, useState, useEffect, component | `react`, `frontend` |
+| Next.js, getServerSideProps, App Router | `nextjs`, `frontend`, `fullstack` |
+| Vue, .vue, Composition API, ref, computed | `vue`, `frontend` |
+| Svelte, .svelte, SvelteKit | `svelte`, `frontend` |
+| Tailwind CSS, className, utility classes | `css`, `frontend` |
+| REST API, endpoint, route, middleware | `api`, `backend` |
+| GraphQL, query, mutation, resolver | `graphql`, `api` |
+| Prisma, Drizzle, ORM, schema | `orm`, `database` |
+| WebSocket, real-time, socket.io | `websocket`, `networking` |
+| Markdown, .md, documentation site | `documentation` |
 | Python, pip, requirements.txt | `python` |
 | JavaScript, npm, node | `javascript` |
 | Bash, shell, script | `shell` |

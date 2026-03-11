@@ -1,7 +1,10 @@
-# PM Detection Examples
+# Detection Confidence Examples
 
 > Reference file for prompt-orchestrator skill.
-> Load when evaluating Phase 0 orchestration detection scoring.
+> Load when evaluating Pre-Analysis Gate detection confidence scoring.
+>
+> This measures whether the source ALREADY contains PM orchestration structure.
+> It is NOT the same as the Complexity Score (Phase 1.4).
 
 ---
 

@@ -1,14 +1,14 @@
 # TASK-MANIFEST
 
-> Generated: {{TIMESTAMP}}
-> Source: {{SOURCE_FILE}}
-> Total Tasks: {{TASK_COUNT}}
+> Generated: 2026-03-11T14:32:00Z
+> Source: QRC-ROOM-STATE-CONTROLLER-IMPLEMENTATION-PLAN-v3.md
+> Total Tasks: 6
 
 ---
 
 ## Execution Flags
 
-**Mode**: `{{EXECUTION_MODE}}`
+**Mode**: `--ambiguous-only`
 
 | Flag | Behavior |
 |------|----------|
@@ -24,7 +24,8 @@ Agents/skills discovered at orchestration time:
 
 | Agent Type | Description | Best For |
 |------------|-------------|----------|
-{{AVAILABLE_AGENT_ROWS}}
+| `general-purpose` | Default Claude agent with full tool access | General code editing, file operations, broad tasks |
+| `fullstack-developer` | Specialized agent for full-stack web development | Frontend/backend combined work, API + UI tasks |
 
 > This list was populated by scanning the Agent tool's available `subagent_type` values
 > and available skills at the time of orchestration. Only assign agents from this list.
@@ -35,7 +36,12 @@ Agents/skills discovered at orchestration time:
 
 | Task File | Extracted Lines | Files Touched | Risk Level | Action |
 |-----------|----------------|---------------|-----------|--------|
-{{CONTEXT_ROT_ROWS}}
+| 01-structural-updates.md | 165 | 1 | Medium | Monitor -- multiple sections modified in single file |
+| 02-logging-phase.md | 168 | 1 | Medium | Monitor -- implementation + test + commit in one task |
+| 03-verification-phase.md | 185 | 1 | Medium | Monitor -- implementation + test + commit in one task |
+| 04A-reconnection-phase.md | 210 | 1 | High | Split considered but kept unified -- modules are tightly coupled |
+| 05-integration-test.md | 140 | 1 | Low | Read-only verification, no code changes |
+| 06-final-updates.md | 92 | 1 | Low | Small scattered edits across existing sections |
 
 **Risk Levels:** Low (<100 lines) | Medium (100-300) | High (300-500) | Critical (500+)
 Tasks marked High/Critical have been split into sub-tasks to prevent context degradation.
@@ -46,7 +52,12 @@ Tasks marked High/Critical have been split into sub-tasks to prevent context deg
 
 | Task File | Capabilities | User-Specified Agent | Allocated Agent | Confidence |
 |-----------|--------------|----------------------|-----------------|------------|
-{{TASK_CAPABILITY_ROWS}}
+| 01-structural-updates.md | `lua`, `q-sys`, `documentation` | -- | general-purpose | 92% |
+| 02-logging-phase.md | `lua`, `q-sys`, `networking` | -- | general-purpose | 95% |
+| 03-verification-phase.md | `lua`, `q-sys`, `networking` | -- | general-purpose | 90% |
+| 04A-reconnection-phase.md | `lua`, `q-sys`, `networking` | -- | general-purpose | 90% |
+| 05-integration-test.md | `lua`, `q-sys`, `testing` | -- | general-purpose | 88% |
+| 06-final-updates.md | `lua`, `q-sys`, `documentation` | -- | general-purpose | 94% |
 
 ---
 
@@ -57,39 +68,19 @@ Tasks marked High/Critical have been split into sub-tasks to prevent context deg
 | `lua` | Lua scripting, Q-SYS plugin code |
 | `q-sys` | Q-SYS Designer APIs, controls, components |
 | `testing` | Test writing, validation, verification |
-| `frontend` | UI layout, components, user interface |
 | `networking` | API calls, HTTP, sockets, protocols |
-| `auth` | Authentication, credentials, security |
-| `file-ops` | File operations, scaffolding, directory setup |
-| `database` | Database operations, storage, persistence |
 | `documentation` | Comments, docs, README files |
+| `file-ops` | File operations, scaffolding, directory setup |
 | `refactoring` | Code cleanup, restructuring |
 | `config` | Configuration files, environment setup |
-| `devops` | CI/CD, deployment, infrastructure |
-| `typescript` | TypeScript code, .ts/.tsx files |
-| `react` | React components, hooks, JSX |
-| `nextjs` | Next.js framework, SSR, App Router |
-| `vue` | Vue.js components, Composition API |
-| `svelte` | Svelte/SvelteKit components |
-| `css` | CSS, Tailwind, styling |
-| `api` | REST API, endpoints, middleware |
-| `graphql` | GraphQL queries, mutations, resolvers |
-| `orm` | Prisma, Drizzle, database ORM |
-| `websocket` | WebSocket, real-time communication |
-| `python` | Python code, pip packages |
-| `javascript` | JavaScript, npm, Node.js |
-| `shell` | Bash, shell scripts |
-| `git` | Git operations, branching |
-| `fullstack` | Full-stack work spanning frontend + backend |
-| `backend` | Server-side logic, business layer |
 
 ---
 
 ## Allocation Summary
 
-**Auto-assigned**: {{AUTO_ASSIGNED_COUNT}} tasks (high confidence)
-**Ambiguous**: {{AMBIGUOUS_COUNT}} tasks (needs user input)
-**User-specified**: {{USER_SPECIFIED_COUNT}} tasks (passthrough)
+**Auto-assigned**: 5 tasks (high confidence)
+**Ambiguous**: 1 task (needs user input)
+**User-specified**: 0 tasks (passthrough)
 
 ---
 
@@ -99,7 +90,7 @@ Tasks requiring user decision (confidence <80% or multiple good matches):
 
 | Task | Capabilities | Options | Why Ambiguous |
 |------|--------------|---------|---------------|
-{{AMBIGUOUS_TASK_ROWS}}
+| 05-integration-test.md | `lua`, `q-sys`, `testing` | general-purpose (88%), fullstack-developer (72%) | Integration test spans all modules and requires understanding of QRC protocol, socket handling, and timer interactions. general-purpose recommended but fullstack-developer could handle the cross-cutting nature. Confidence at 88% is above threshold but closest to ambiguous boundary. |
 
 ---
 

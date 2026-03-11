@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Prompt Complexity Analyzer
+Prompt Complexity Analyzer (v0.7.0)
 
-Analyzes a prompt for complexity signals and outputs a structured report
-with task extraction, dependency mapping, and complexity scoring.
+Analyzes a prompt for complexity signals using the Phase 1.4 Complexity Score formula
+from SKILL.md. Outputs a structured report with task extraction, dependency mapping,
+and complexity scoring.
+
+NOTE: This script produces the "Complexity Score" (how complex is the content?).
+It does NOT produce the "Detection Confidence" score (does it already have orchestration?).
 
 Usage:
     python3 analyze_prompt.py --prompt "Your complex prompt here"
@@ -50,14 +54,13 @@ DEPENDENCY_PATTERNS = [
     r"finally,? (.+)",
 ]
 
-# Complexity multipliers
+# Aligned with SKILL.md Phase 1.4 Complexity Score
 COMPLEXITY_WEIGHTS = {
-    "task": 5,
-    "dependency": 3,
-    "file": 2,
-    "conditional": 10,
-    "integration": 10,
-    "testing": 5,
+    "phase_section": 10,    # Each phase/major section: +10
+    "subagent_prompt": 5,   # Each subagent prompt: +5
+    "code_block": 2,        # Each code block: +2
+    "source_lines": 1,      # Per 100 lines: +1
+    "dependency": 3,        # Each dependency between sections: +3
 }
 
 
@@ -251,46 +254,32 @@ def calculate_complexity(
     files: List[str],
     prompt: str
 ) -> Tuple[int, dict]:
-    """Calculate complexity score with breakdown."""
+    """Calculate complexity score aligned with SKILL.md Phase 1.4."""
+
+    # Count structural elements
+    phases = len(re.findall(r'^#{1,3}\s+(?:phase|step|part)\s+\d', prompt, re.MULTILINE | re.IGNORECASE))
+    code_blocks = len(re.findall(r'```', prompt)) // 2  # pairs of backticks
+    subagent_prompts = len(re.findall(r'(?:subagent|prompt|agent):', prompt, re.IGNORECASE))
+    source_lines = prompt.count('\n') + 1
+
     breakdown = {
-        "tasks": len(tasks) * COMPLEXITY_WEIGHTS["task"],
+        "phases_sections": max(phases, len(tasks)) * COMPLEXITY_WEIGHTS["phase_section"],
+        "subagent_prompts": subagent_prompts * COMPLEXITY_WEIGHTS["subagent_prompt"],
+        "code_blocks": code_blocks * COMPLEXITY_WEIGHTS["code_block"],
+        "source_lines": (source_lines // 100) * COMPLEXITY_WEIGHTS["source_lines"],
         "dependencies": len(dependencies) * COMPLEXITY_WEIGHTS["dependency"],
-        "files": len(files) * COMPLEXITY_WEIGHTS["file"],
-        "conditionals": 0,
-        "integrations": 0,
-        "testing": 0,
     }
 
-    # Check for conditionals
-    conditional_patterns = [r"if .+", r"when .+", r"unless .+", r"depending on"]
-    for pattern in conditional_patterns:
-        breakdown["conditionals"] += len(re.findall(pattern, prompt.lower())) * COMPLEXITY_WEIGHTS["conditional"]
-
-    # Check for integration requirements
-    integration_patterns = [r"integrate", r"connect to", r"api", r"external"]
-    for pattern in integration_patterns:
-        if re.search(pattern, prompt.lower()):
-            breakdown["integrations"] += COMPLEXITY_WEIGHTS["integration"]
-
-    # Check for testing requirements
-    testing_patterns = [r"test", r"validate", r"verify", r"ensure"]
-    for pattern in testing_patterns:
-        if re.search(pattern, prompt.lower()):
-            breakdown["testing"] += COMPLEXITY_WEIGHTS["testing"]
-
     total = sum(breakdown.values())
-    # Cap at 100
     return min(total, 100), breakdown
 
 
 def get_recommendation(score: int) -> str:
-    """Get recommendation based on complexity score."""
+    """Get recommendation aligned with SKILL.md Phase 1.5."""
     if score <= 30:
-        return "MONOLITHIC_OK: Simple task, orchestration optional"
-    elif score <= 70:
-        return "RECOMMEND_DECOMPOSITION: Moderate complexity, orchestration recommended"
+        return "ASK_USER: Complexity score {}/100. Execute directly or decompose?".format(score)
     else:
-        return "STRONGLY_RECOMMEND: High complexity, orchestration strongly recommended"
+        return "PROCEED: Complexity score {}/100. Orchestration recommended.".format(score)
 
 
 def analyze_prompt(prompt: str) -> AnalysisResult:

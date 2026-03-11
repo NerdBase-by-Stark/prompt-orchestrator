@@ -28,7 +28,7 @@
 
 ## Context
 
-**Read first**: `/home/spark-bitch/ai/qsys-plugins/qsys-mute-state-controller/.orchestrator/CONTEXT.md`
+**Read first**: `/home/spark-bitch/ai/qsys-plugins/qsys-mute-state-controller/orchestration/CONTEXT.md`
 
 ---
 
@@ -125,7 +125,7 @@ end
 When complete, report:
 
 ```
-STATUS: COMPLETE or FAILED
+STATUS: COMPLETE or FAILED or BLOCKED or CLARIFICATION NEEDED
 
 CHANGES APPLIED:
 - [list each change made]

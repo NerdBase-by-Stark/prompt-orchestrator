@@ -135,6 +135,6 @@ When evaluating source documents:
 | Confidence | Score Range | Recommendation |
 |------------|-------------|----------------|
 | High | 80-100 | Strong orchestration - recommend USE AS-IS |
-| Medium | 60-79 | Good structure - recommend BOTH |
+| Medium | 60-79 | Good structure - present choice: USE AS-IS (recommended) or REBUILD |
 | Low | 40-59 | Partial structure - recommend REBUILD |
 | None | 0-39 | No orchestration - full skill application |

@@ -56,7 +56,7 @@ Parallel tasks that converge to a single point.
 
 ### Pattern 3: Generate-Review-Revise Loop
 
-Iterative refinement pattern from AFlow.
+Iterative refinement pattern.
 
 ```
 [Generate] → [Review] → [Revise] → [Validate]
@@ -187,7 +187,7 @@ This task ONLY covers creating the configuration file. Do NOT implement environm
 - [ ] All required keys present
 
 ## Output
-STATUS: COMPLETE or FAILED
+STATUS: COMPLETE or FAILED or BLOCKED or CLARIFICATION NEEDED
 CHANGES APPLIED: [list]
 NOTES: [any issues]
 ```
@@ -266,7 +266,7 @@ Create a complete authentication service with JWT tokens, password hashing, and 
 - Log all auth events for audit trail
 
 ## Output Format
-STATUS: COMPLETE or FAILED
+STATUS: COMPLETE or FAILED or BLOCKED or CLARIFICATION NEEDED
 CHANGES APPLIED: [files created/modified]
 FILES MODIFIED: [list]
 NOTES: [any issues]

@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-version: 0.7.0
+version: 0.8.0
 description: "Decomposes complex prompts into orchestrated multi-task workflows. This skill should be used when the user provides a complex request with multiple distinct tasks, dependencies between steps, or expected output exceeding 500 lines. Triggers include: /orchestrate, 'break this down', 'decompose this', 'orchestrate this task', or prompts containing 5+ distinct action items. Not intended for simple single-step tasks."
 ---
 
@@ -28,7 +28,7 @@ Agent tool:
   subagent_type: "general-purpose"
   description: "Orchestrate complex task plan"
   prompt: |
-    <!-- ORCHESTRATOR_SUBAGENT_ACTIVE_v0.7 -->
+    <!-- ORCHESTRATOR_SUBAGENT_ACTIVE_v0.8 -->
     Execute the prompt-orchestrator skill.
     Source: {source_file_or_prompt}
     Output: {output_directory}
@@ -45,7 +45,7 @@ Agent tool:
 ### Recursion Guard
 
 If your prompt contains ANY of these indicators, you ARE the subagent:
-- The HTML comment `<!-- ORCHESTRATOR_SUBAGENT_ACTIVE_v0.7 -->`
+- The HTML comment `<!-- ORCHESTRATOR_SUBAGENT_ACTIVE_v0.8 -->`
 - The phrase "Execute the prompt-orchestrator skill"
 - You were spawned via the Agent tool
 
@@ -199,7 +199,7 @@ becomes the SOURCE for a streamlined extraction. You MUST still generate orchest
    - `SUGGESTIONS.md` — any observations from the plan
    - `subagent-tasks/*.md` — one per plan phase, with verbatim extraction
 
-6. **Proceed to Phase 3** (execution) with the generated artifacts
+6. **Present artifacts to user** and STOP. User decides execution method.
 
 **USE AS-IS does NOT mean "skip orchestration."** It means "the source structure is good enough
 to use as the skeleton — still wrap it in PM coordination artifacts."
@@ -609,76 +609,117 @@ The only exception is sections explicitly marked "out of scope" by the user.
 
 ---
 
-### Phase 3: Execute
+### Phase 3: Handoff (MANDATORY — Orchestration Ends Here)
 
-**If `--generate-only` flag is set**: Skip Phase 3 entirely. Return the generated artifacts
-(PM-ORCHESTRATION.md, TASK-MANIFEST.md, CONTEXT.md, SUGGESTIONS.md, task files) without
-executing. Report: "Orchestration generated. {N} task files ready for execution."
+**The orchestrator's job is PREPARATION, not execution.** Phase 3 presents the generated
+artifacts to the user and STOPS. The user decides how and when to execute.
 
-**3.1 Pre-Execution Review**
+**3.1 Artifact Summary**
+
+After Phase 2 completes, present:
 
 ```
-## Orchestration Generated
+===============================================
+ ORCHESTRATION COMPLETE
+===============================================
 
 Source: {path}
-Tasks: {n} task files
-Suggestions: {m} observations
+Output: {output_dir}/
+Tasks:  {n} task files generated
+Suggestions: {m} observations ({critical} critical)
 
-### Critical Observations ({count})
-{top 3 from SUGGESTIONS.md}
+Files Generated:
+  PM-ORCHESTRATION.md  — PM coordination & task sequence
+  TASK-MANIFEST.md     — Agent allocation & capability mapping
+  CONTEXT.md           — Shared context for all subagents
+  SUGGESTIONS.md       — Advisory observations
+  subagent-tasks/      — {n} task files
 
-### Options
-[REVIEW] View full SUGGESTIONS.md
-[PROCEED] Execute tasks
-[ABORT] Cancel
+### Critical Observations
+{top 3 from SUGGESTIONS.md, if any}
+
+### Execution Options
+
+[EXECUTE]   Run PM-ORCHESTRATION.md now in this session
+[WORKTREE]  Execute in an isolated git worktree
+[LATER]     Save for execution in a new session
+[REVIEW]    View full SUGGESTIONS.md first
+===============================================
 ```
 
-**WAIT FOR USER RESPONSE.** Do NOT proceed to Phase 3.2 until the user selects an option.
-If no response is received, do NOT default to [PROCEED]. The user MUST explicitly confirm.
+**WAIT FOR USER RESPONSE.** Do NOT proceed to execution unless the user explicitly
+chooses [EXECUTE] or [WORKTREE]. The default is to stop and let the user decide.
 
-**3.1.1 Suggestion Triage**
+**3.2 If User Chooses [REVIEW]**
 
-After the user responds to the pre-execution review, if they choose [REVIEW]:
 1. Present the full SUGGESTIONS.md
 2. For each Critical item, ask: ACKNOWLEDGE / DEFER / N/A
 3. Update the Status column in SUGGESTIONS.md accordingly
-4. Return to the options prompt
+4. Return to the execution options prompt
 
-The PM SHOULD review SUGGESTIONS.md before dispatching the first task and note any
-ACKNOWLEDGED items that may affect execution.
+**3.3 If User Chooses [EXECUTE]**
 
-**3.2 Task Execution**
+Spawn the PM as a subagent to execute PM-ORCHESTRATION.md:
 
-For each task, spawn subagent via Agent tool:
 ```
 Agent tool:
-  subagent_type: {from TASK-MANIFEST.md}
-  description: "{3-5 word task summary}"
+  subagent_type: "general-purpose"
+  description: "Execute PM orchestration"
   prompt: |
-    You are executing a task for the {PROJECT_NAME} project.
-    Working directory: {WORKING_DIRECTORY}
+    You are the PROJECT MANAGER for {PROJECT_NAME}.
+    Read and execute: {OUTPUT_DIR}/PM-ORCHESTRATION.md
 
-    STEP 1: Read the shared context file:
-      {CONTEXT_PATH}
+    For each task in the TASK SEQUENCE table, spawn a subagent:
+      subagent_type: {from TASK-MANIFEST.md}
+      description: "{3-5 word task summary}"
+      prompt: |
+        You are executing a task for the {PROJECT_NAME} project.
+        Working directory: {WORKING_DIRECTORY}
 
-    STEP 2: Read and execute the task file:
-      {TASK_PATH}
+        STEP 1: Read the shared context file:
+          {CONTEXT_PATH}
 
-    STEP 3: Follow the task's validation criteria exactly.
+        STEP 2: Read and execute the task file:
+          {TASK_PATH}
 
-    STEP 4: Report STATUS: COMPLETE or FAILED with the output format specified in the task file.
+        STEP 3: Follow the task's validation criteria exactly.
+
+        STEP 4: Report STATUS: COMPLETE or FAILED with output format in the task file.
+
+    DO NOT read task files yourself. Dispatch agents and track results.
+    DO NOT invoke /orchestrate or the prompt-orchestrator skill.
+    Update PROGRESS TRACKER after each task completes.
+    If FAILED: halt, report, do not proceed.
+
+    CONTEXT DISCIPLINE (MANDATORY):
+    - NEVER use Read on source code files (.py, .ts, .js, .lua, etc.)
+    - NEVER use Edit/Write on ANY file directly — dispatch agents for all edits
+    - NEVER use Bash/Grep/Glob to search or inspect project files
+    - NEVER use WebFetch/WebSearch — dispatch agents for research
+    - If you need to understand something, dispatch an analysis agent
+    - Your ONLY tools: Agent (dispatch), TaskCreate/TaskUpdate (track)
+    - Agent results must be STATUS + summary only. If an agent needs to
+      produce content, instruct it to write to a file and return the path.
 ```
 
-**DO NOT read the task file yourself to "build a better prompt."** The prompt above is sufficient. The task file is self-contained. Adding your own context from reading it defeats the isolation model.
+**3.4 If User Chooses [WORKTREE]**
 
-**3.3 Monitor Progress**
+Same as [EXECUTE] but spawn with `isolation: "worktree"`. **IMPORTANT**: The orchestration
+artifacts MUST be accessible from the worktree. Either:
+- Generate artifacts in a path relative to the repo root (not absolute), OR
+- Copy artifacts into the worktree before dispatching the PM
 
-1. Check for STATUS: COMPLETE or FAILED
-2. Update PM-ORCHESTRATION.md progress tracker
-3. If FAILED: halt, report, ask user
-4. If COMPLETE: proceed to next
+**3.5 If User Chooses [LATER]**
 
-**3.4 Completion Report**
+Report the path to the orchestration artifacts and exit:
+
+```
+Orchestration artifacts saved to: {output_dir}/
+To execute later, start a new session and run:
+  "Execute PM-ORCHESTRATION.md at {output_dir}/PM-ORCHESTRATION.md"
+```
+
+**3.6 Completion Report** (after execution, if chosen)
 
 ```
 ## Orchestration Complete
@@ -710,6 +751,7 @@ SUGGESTIONS.md: {N} observations ({critical} critical)
 | 9 | PM reading source document | Source is fully extracted — TASK SEQUENCE has everything | Source is fully extracted |
 | 10 | Assigning nonexistent agents | Agents come from runtime discovery only | Use runtime discovery (Phase 1.6) |
 | 11 | Over-sized tasks causing context rot | Tasks are sized for agent context comfort | Use context rot assessment (Phase 1.7) |
+| 12 | Auto-executing after generation | Orchestration generates artifacts and stops — user chooses execution method | Present execution options, wait for user |
 
 > For detailed examples, see `references/extraction-examples.md`
 
@@ -728,21 +770,25 @@ If you think/write these phrases, STOP:
 - "I should check what the task contains..."
 - "Let me peek at the source to verify..."
 - "I need more context about this task..."
+- "Let me run a quick grep..."
+- "Let me edit the plan file..."
+- "I'll fetch the docs to check..."
 
 **Instead, remind yourself:**
 - "The TASK SEQUENCE table has every coordination detail I need."
 - "I dispatch agents and track results — that's my entire job."
 - "Reading task files would pollute my coordination context."
+- "If I need to edit a file, I dispatch an agent to do it — my context stays clean."
 
 ---
 
 ## Invocation
 
 ```bash
-/orchestrate --file plan.md              # Standard usage
+/orchestrate --file plan.md              # Standard usage (generates artifacts, stops)
 /orchestrate "Complex prompt here"       # Inline prompt
 /orchestrate --threshold 20 --file x.md  # Lower threshold
-/orchestrate --generate-only --file x.md # Generate without execute
+/orchestrate --execute --file x.md       # Generate AND execute (opt-in)
 ```
 
 ---
@@ -780,5 +826,6 @@ If you think/write these phrases, STOP:
 | Max parallel group size | 5 | File-overlap analysis becomes unreliable above 5 |
 | Checkpoint interval | Every 3 tasks | PM should summarize progress every 3 completions |
 | Single-task threshold | 1 task identified | If only 1 task, ask user: "Only 1 task detected. Execute directly or use full orchestration?" |
+| PM direct tool calls per task | 0 (Agent + TaskUpdate only) | Any Read/Edit/Bash by PM = context pollution |
 
 If any limit is exceeded, pause and report to the user before continuing.

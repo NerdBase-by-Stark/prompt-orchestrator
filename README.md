@@ -3,7 +3,7 @@
 > Automatically decompose complex prompts into orchestrated, executable workflows for Claude Code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: v0.7.0](https://img.shields.io/badge/Status-v0.7.0-blue.svg)]()
+[![Status: v0.8.0](https://img.shields.io/badge/Status-v0.8.0-blue.svg)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
 ---
@@ -117,7 +117,7 @@ See [skill/assets/examples/](skill/assets/examples/) for the full orchestration 
 
 ## Features
 
-### Current (v0.7.0)
+### Current (v0.8.0)
 - [x] Prompt complexity analysis & scoring
 - [x] PM-ORCHESTRATION.md generation with subagent enforcement
 - [x] CONTEXT.md generation with deduplication
@@ -133,6 +133,9 @@ See [skill/assets/examples/](skill/assets/examples/) for the full orchestration 
 - [x] Context Rot Risk Assessment for task splitting
 - [x] Tightened Pre-Analysis Gate (plan vs PM orchestration distinction)
 - [x] Mandatory artifact generation on USE AS-IS path
+- [x] Separation of orchestration from execution (generate-then-handoff)
+- [x] PM context discipline enforcement (zero direct file operations)
+- [x] User-controlled execution options (EXECUTE / WORKTREE / LATER / REVIEW)
 
 ### Roadmap
 - [ ] Parallel task detection & execution

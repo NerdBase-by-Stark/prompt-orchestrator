@@ -3,7 +3,7 @@
 > Automatically decompose complex prompts into orchestrated, executable workflows for Claude Code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: v0.5.2](https://img.shields.io/badge/Status-v0.5.2-blue.svg)]()
+[![Status: v0.7.0](https://img.shields.io/badge/Status-v0.7.0-blue.svg)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
 ---
@@ -113,21 +113,26 @@ From our test case (QRC Room State Controller):
 - Clear task boundaries
 - Verifiable progress
 
-See [examples/](examples/) for the full orchestration files.
+See [skill/assets/examples/](skill/assets/examples/) for the full orchestration files.
 
 ## Features
 
-### Current (v0.5.2)
+### Current (v0.7.0)
 - [x] Prompt complexity analysis & scoring
 - [x] PM-ORCHESTRATION.md generation with subagent enforcement
 - [x] CONTEXT.md generation with deduplication
-- [x] TASK-MANIFEST.md for agent allocation
+- [x] TASK-MANIFEST.md for agent allocation with action-type gating
 - [x] SUGGESTIONS.md for advisory observations
 - [x] Subagent task file generation with semantic bundling
 - [x] Existing orchestration detection (USE AS-IS / REBUILD / BOTH)
 - [x] Anti-rationalization rules (PM can't skip subagents)
 - [x] Recursion guard for nested invocations
 - [x] Progressive reference loading (lean core skill)
+- [x] Agent Tool Capability Matrix (write-capable vs read-only classification)
+- [x] Task Action Classification with HARD GATE enforcement
+- [x] Context Rot Risk Assessment for task splitting
+- [x] Tightened Pre-Analysis Gate (plan vs PM orchestration distinction)
+- [x] Mandatory artifact generation on USE AS-IS path
 
 ### Roadmap
 - [ ] Parallel task detection & execution
@@ -149,9 +154,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Documentation
 
-- [Product Requirements (PRD)](specs/PRD.md)
-- [Industry Research](docs/research/industry-findings.md)
-- [Existing Tools Analysis](docs/research/existing-tools.md)
+- [Capability Inference Rules](skill/references/capability-inference.md)
+- [PM Detection Examples](skill/references/pm-detection-examples.md)
+- [Extraction Examples](skill/references/extraction-examples.md)
+- [Workflow Patterns](skill/references/workflow-patterns.md)
 
 ## License
 

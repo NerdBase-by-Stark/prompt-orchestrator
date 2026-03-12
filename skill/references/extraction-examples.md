@@ -18,11 +18,13 @@ end
 ```markdown
 ## Implementation (source lines 450-470)
 
+<extracted-source document="source-prompt.md" lines="450-470">
 ```lua
 function LogError(message)
   print("[ERROR] " .. message)  -- Wrong API for Q-SYS
 end
 ```
+</extracted-source>
 ```
 
 **SUGGESTIONS.md** (observation):
@@ -43,7 +45,9 @@ Connected: Log, set status=0 (OK), connected=true, send Logon if auth required
 ```markdown
 ## Socket Connected Handler (source line 156)
 
+<extracted-source document="source-prompt.md" lines="156">
 Connected: Log, set status=0 (OK), connected=true, send Logon if auth required
+</extracted-source>
 ```
 
 **SUGGESTIONS.md** (note the gap):
@@ -76,12 +80,14 @@ TASK: Create plugin skeleton file...
 
 **Prompt**:
 
+<extracted-source document="source-prompt.md" lines="200-240">
 MANDATORY CONTEXT: Read /home/spark-bitch/CLAUDE.md before proceeding.
 
 PROJECT: QRC Room State Controller
 
 TASK: Create plugin skeleton file...
 [ALL 40 lines copied verbatim - no summarization]
+</extracted-source>
 ```
 
 ---
@@ -123,7 +129,21 @@ Problems:
 
 **Total Lines Extracted**: 148
 
-[All 148 lines from primary + related sections]
+<extracted-source document="source-prompt.md" lines="50-92">
+[Primary section: Archive/Setup content]
+</extracted-source>
+
+<extracted-source document="source-prompt.md" lines="200-215">
+[Related: Backup Procedures content]
+</extracted-source>
+
+<extracted-source document="source-prompt.md" lines="450-465">
+[Related: Rollback Plan content]
+</extracted-source>
+
+<extracted-source document="source-prompt.md" lines="310-340">
+[Related: Data Migration content]
+</extracted-source>
 
 Result: Self-contained, subagent can backup and recover
 ```

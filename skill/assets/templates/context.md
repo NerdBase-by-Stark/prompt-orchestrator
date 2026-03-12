@@ -1,3 +1,7 @@
+<!-- Orchestrator: Only include the MANDATORY FIRST STEP section if a CLAUDE.md file
+     exists at the project root or a known location. Check for existence before including.
+     If no CLAUDE.md found, omit the entire MANDATORY FIRST STEP section. -->
+
 # {{PROJECT_NAME}} - Shared Context
 
 > This file is read by ALL subagents before executing their tasks.
@@ -5,9 +9,11 @@
 
 ---
 
+{{#IF_CLAUDE_MD_EXISTS}}
 ## MANDATORY FIRST STEP
 
 Before doing any work, read: `{{CLAUDE_MD_PATH}}`
+{{/IF_CLAUDE_MD_EXISTS}}
 
 ---
 
